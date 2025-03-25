@@ -32,7 +32,7 @@ export const siteConfig = {
   deliveryAreas: ["Adajan", "City Light", "Vesu", "Piplod", "Pal", "Athwa"],
   deliveryTime: "10-15 minutes",
   currency: "₹",
-  adminEmail: "admin@quickbasket.com",
+  adminEmail: "akshaysuthar05@gmail.com",
   developer: {
     name: "TechInnovate Solutions",
     website: "https://techinnovate.dev",
