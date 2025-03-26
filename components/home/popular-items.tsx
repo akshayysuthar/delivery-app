@@ -1,58 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { ProductCard } from "@/components/product/product-card"
-import { ChevronRight } from "lucide-react"
-import { useSound } from "@/context/sound-context"
+import Link from "next/link";
+import { ProductCard } from "@/components/product/product-card";
+import { ChevronRight } from "lucide-react";
+import { useSound } from "@/context/sound-context";
 
-// Mock popular products data
-const popularProducts = [
-  {
-    id: 5,
-    name: "Tata Salt",
-    description: "1 kg, Iodized",
-    price: 25,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "staples-cooking",
-    inStock: true,
-    discount: 0,
-  },
-  {
-    id: 6,
-    name: "Maggi Noodles",
-    description: "Pack of 4",
-    price: 60,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "snacks-beverages",
-    inStock: true,
-    discount: 8,
-  },
-  {
-    id: 7,
-    name: "Aashirvaad Atta",
-    description: "5 kg, Whole Wheat",
-    price: 250,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "staples-cooking",
-    inStock: true,
-    discount: 15,
-  },
-  {
-    id: 8,
-    name: "Surf Excel Detergent",
-    description: "1 kg",
-    price: 180,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "household-cleaning",
-    inStock: true,
-    discount: 0,
-  },
-]
+type Product = {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  sale_price: number | null;
+  image: string | null;
+  category_id: number;
+  in_stock: boolean;
+  stock_quantity: number;
+  unit: string;
+  created_at: string;
+};
 
-export function PopularItems() {
-  const [products] = useState(popularProducts)
-  const { playSound } = useSound()
+export function PopularItems({ products }: { products: Product[] }) {
+  const { playSound } = useSound();
 
   return (
     <section className="mb-10">
@@ -72,6 +40,5 @@ export function PopularItems() {
         ))}
       </div>
     </section>
-  )
+  );
 }
-

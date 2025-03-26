@@ -32,13 +32,14 @@ export const siteConfig = {
   deliveryAreas: ["Adajan", "City Light", "Vesu", "Piplod", "Pal", "Athwa"],
   deliveryTime: "10-15 minutes",
   currency: "₹",
-  adminEmail: "admin@quickbasket.com",
+  adminEmail: "akshaysuthar05@gmail.com",
   developer: {
-    name: "TechInnovate Solutions",
+    name: "Akshay TechInnovate Solutions",
     website: "https://techinnovate.dev",
     email: "contact@techinnovate.dev",
-    year: 2023,
+    year: 2025,
   },
+  imageBaseUrl: "https://your-image-base-url.com",
   appFeatures: [
     {
       title: "Fast Delivery",

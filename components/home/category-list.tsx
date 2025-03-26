@@ -1,52 +1,23 @@
-import Link from "next/link"
-import Image from "next/image"
-import { ChevronRight } from "lucide-react"
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 
-const categories = [
-  {
-    id: 1,
-    name: "Fruits & Vegetables",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "fruits-vegetables",
-  },
-  {
-    id: 2,
-    name: "Dairy & Breakfast",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "dairy-breakfast",
-  },
-  {
-    id: 3,
-    name: "Snacks & Beverages",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "snacks-beverages",
-  },
-  {
-    id: 4,
-    name: "Staples & Cooking",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "staples-cooking",
-  },
-  {
-    id: 5,
-    name: "Household & Cleaning",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "household-cleaning",
-  },
-  {
-    id: 6,
-    name: "Personal Care",
-    image: "/placeholder.svg?height=100&width=100",
-    slug: "personal-care",
-  },
-]
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  image: string | null;
+};
 
-export function CategoryList() {
+export function CategoryList({ categories }: { categories: Category[] }) {
   return (
     <section className="mb-10">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Shop by Category</h2>
-        <Link href="/categories" className="text-sm font-medium text-primary flex items-center">
+        <Link
+          href="/categories"
+          className="text-sm font-medium text-primary flex items-center"
+        >
           View All <ChevronRight className="h-4 w-4 ml-1" />
         </Link>
       </div>
@@ -58,13 +29,19 @@ export function CategoryList() {
             className="group flex flex-col items-center p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
           >
             <div className="relative h-16 w-16 mb-3">
-              <Image src={category.image || "/placeholder.svg"} alt={category.name} fill className="object-contain" />
+              <Image
+                src={category.image || "/placeholder.svg"}
+                alt={category.name}
+                fill
+                className="object-contain"
+              />
             </div>
-            <span className="text-sm font-medium text-center">{category.name}</span>
+            <span className="text-sm font-medium text-center">
+              {category.name}
+            </span>
           </Link>
         ))}
       </div>
     </section>
-  )
+  );
 }
-

@@ -13,36 +13,49 @@ import { cn } from "@/lib/utils";
 import { getProductImageUrl } from "@/lib/image-placeholders";
 
 interface Product {
-  id: string;
+  id: number; // Changed from string to number to match Supabase BIGSERIAL
   name: string;
-  description: string;
+  description: string; // Make non-nullable
   price: number;
-  sale_price?: number;
-  image: string;
-  category_id: string;
+  sale_price: number | null; // Allow null as per schema
+  image: string | null; // Allow null as per schema
+  category_id: number | null; // Changed from string to number, allow null as per schema
   in_stock: boolean;
   stock_quantity: number;
   unit: string;
   created_at: string;
+  product_code?: string; // Optional, if you added this column
 }
 
 interface ProductCardProps {
-  product: Product;
+  product: {
+    id: number;
+    name: string;
+    description: string | null;
+    price: number;
+    sale_price: number | null;
+    image: string | null;
+    category_id: number;
+    in_stock: boolean;
+    stock_quantity: number;
+    unit: string;
+    created_at: string;
+  };
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { playSound } = useSound();
   const [isHovered, setIsHovered] = useState(false);
-  const quantity = getItemQuantity(product.id);
+  const quantity = getItemQuantity(product.id.toString());
 
   const handleAddToCart = () => {
-    addToCart(product);
+    addToCart({ ...product, id: product.id.toString() });
     playSound("add");
   };
 
   const handleRemoveFromCart = () => {
-    removeFromCart(product.id);
+    removeFromCart(product.id.toString());
     playSound("remove");
   };
 
@@ -76,7 +89,7 @@ export function ProductCard({ product }: ProductCardProps) {
           className="h-full w-full"
         >
           <Image
-            src={getProductImageUrl(product.image) || "/placeholder.svg"}
+            src={product.image || "/placeholder.svg"}
             alt={product.name}
             width={200}
             height={200}

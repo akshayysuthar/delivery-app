@@ -27,10 +27,8 @@ import {
   getProductById,
   getRelatedProducts,
   getCategoryBySlug,
-} from "@/lib/mock-data";
-import { getProductImageUrl } from "@/lib/image-placeholders";
+} from "@/lib/supabase-client";
 import { ProductCard } from "@/components/product/product-card";
-import { mockCategories } from "@/lib/mock-data"; // Import mockCategories
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -43,27 +41,31 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(0);
 
   useEffect(() => {
-    if (id) {
-      const productData = getProductById(id as string);
-      setProduct(productData);
+    async function fetchData() {
+      if (id) {
+        const productData = await getProductById(Number(id));
+        setProduct(productData);
 
-      if (productData) {
-        const related = getRelatedProducts(productData.id);
-        setRelatedProducts(related);
+        if (productData) {
+          const related = await getRelatedProducts(productData.id);
+          setRelatedProducts(related);
 
-        const categoryData = getCategoryBySlug(
-          productData.category_id.startsWith("cat-")
-            ? mockCategories.find((c) => c.id === productData.category_id)
-                ?.slug || ""
-            : productData.category_id
-        );
-        setCategory(categoryData);
+          const categoryData = await getCategoryBySlug(
+            productData.category_id
+              ? (
+                  await getCategoryBySlug(String(productData.category_id))
+                )?.slug || ""
+              : ""
+          );
+          setCategory(categoryData);
 
-        setQuantity(getItemQuantity(productData.id));
+          setQuantity(getItemQuantity(productData.id));
+        }
+
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     }
+    fetchData();
   }, [id, getItemQuantity]);
 
   const handleAddToCart = () => {
@@ -81,6 +83,8 @@ export default function ProductDetailPage() {
       setQuantity(quantity - 1);
     }
   };
+
+  // ... rest of the component remains the same
 
   if (isLoading) {
     return (
@@ -109,6 +113,13 @@ export default function ProductDetailPage() {
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
 
+  function getProductImageUrl(image: any): string {
+    if (!image) {
+      return "/placeholder.svg";
+    }
+    return `${siteConfig.imageBaseUrl}/${image}`;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-4">
@@ -135,7 +146,7 @@ export default function ProductDetailPage() {
             className="rounded-lg overflow-hidden aspect-square relative"
           >
             <Image
-              src={getProductImageUrl(product.image) || "/placeholder.svg"}
+              src={product.image || "/placeholder.svg"}
               alt={product.name}
               fill
               className="object-cover"

@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/context/cart-context";
 import { SoundProvider } from "@/context/sound-context";
 import { AuthProvider } from "@/context/auth-context";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,7 +32,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
+        <ClerkProvider>
+          <AuthProvider>
           <SoundProvider>
             <CartProvider>
               <div className="flex min-h-screen flex-col">
@@ -42,7 +44,8 @@ export default function RootLayout({
               <Toaster />
             </CartProvider>
           </SoundProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

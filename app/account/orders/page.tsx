@@ -1,36 +1,41 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { format } from "date-fns"
-import { ChevronRight, ShoppingBag } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { format } from "date-fns";
+import { ChevronRight, ShoppingBag } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/context/auth-context"
-import { supabase, type Order, type OrderItem } from "@/lib/supabase"
-import { AccountNav } from "@/components/account/account-nav"
-import { siteConfig } from "@/config/site"
-import { useToast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/auth-context";
+import { supabase, type Order, type OrderItem } from "@/lib/supabase";
+import { AccountNav } from "@/components/account/account-nav";
+import { siteConfig } from "@/config/site";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function OrdersPage() {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const [orders, setOrders] = useState<(Order & { items: OrderItem[] })[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [orders, setOrders] = useState<(Order & { items: OrderItem[] })[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchOrders()
+      fetchOrders();
     } else {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [user])
+  }, [user]);
 
   const fetchOrders = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
       // Fetch orders
@@ -38,10 +43,10 @@ export default function OrdersPage() {
         .from("orders")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (ordersError) {
-        throw ordersError
+        throw ordersError;
       }
 
       // For each order, fetch order items
@@ -50,58 +55,58 @@ export default function OrdersPage() {
           const { data: itemsData, error: itemsError } = await supabase
             .from("order_items")
             .select("*, product:products(*)")
-            .eq("order_id", order.id)
+            .eq("order_id", order.id);
 
           if (itemsError) {
-            throw itemsError
+            throw itemsError;
           }
 
           return {
             ...order,
             items: itemsData || [],
-          }
-        }),
-      )
+          };
+        })
+      );
 
-      setOrders(ordersWithItems)
+      setOrders(ordersWithItems);
     } catch (error) {
-      console.error("Error fetching orders:", error)
+      console.error("Error fetching orders:", error);
       toast({
         title: "Failed to load orders",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const getStatusBadgeVariant = (status: Order["status"]) => {
     switch (status) {
       case "pending":
-        return "secondary"
+        return "secondary";
       case "processing":
-        return "default"
+        return "default";
       case "delivered":
-        return "success"
+        return "success";
       case "cancelled":
-        return "destructive"
+        return "destructive";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   const getPaymentStatusBadgeVariant = (status: Order["payment_status"]) => {
     switch (status) {
       case "paid":
-        return "success"
+        return "success";
       case "pending":
-        return "secondary"
+        return "secondary";
       case "failed":
-        return "destructive"
+        return "destructive";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   if (!user) {
     return (
@@ -111,7 +116,7 @@ export default function OrdersPage() {
           <Link href="/auth/signin">Sign In</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -132,7 +137,9 @@ export default function OrdersPage() {
             <div className="border rounded-lg p-8 text-center">
               <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-lg font-semibold mb-2">No orders yet</h2>
-              <p className="text-muted-foreground mb-4">You haven&apos;t placed any orders yet.</p>
+              <p className="text-muted-foreground mb-4">
+                You haven&apos;t placed any orders yet.
+              </p>
               <Button asChild>
                 <Link href="/">Start Shopping</Link>
               </Button>
@@ -140,19 +147,34 @@ export default function OrdersPage() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => (
-                <div key={order.id} className="border rounded-lg overflow-hidden">
+                <div
+                  key={order.id}
+                  className="border rounded-lg overflow-hidden"
+                >
                   <div className="bg-muted p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm text-muted-foreground">Order #{order.id.substring(0, 8)}</p>
-                        <p className="text-sm">Placed on {format(new Date(order.created_at), "MMM d, yyyy")}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Order #{order.id}
+                        </p>
+                        <p className="text-sm">
+                          Placed on{" "}
+                          {format(new Date(order.created_at), "MMM d, yyyy")}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant={getStatusBadgeVariant(order.status)}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          {order.status.charAt(0).toUpperCase() +
+                            order.status.slice(1)}
                         </Badge>
-                        <Badge variant={getPaymentStatusBadgeVariant(order.payment_status)}>
-                          Payment: {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                        <Badge
+                          variant={getPaymentStatusBadgeVariant(
+                            order.payment_status
+                          )}
+                        >
+                          Payment:{" "}
+                          {order.payment_status.charAt(0).toUpperCase() +
+                            order.payment_status.slice(1)}
                         </Badge>
                       </div>
                     </div>
@@ -160,7 +182,9 @@ export default function OrdersPage() {
 
                   <Accordion type="single" collapsible>
                     <AccordionItem value="items">
-                      <AccordionTrigger className="px-4">Order Details</AccordionTrigger>
+                      <AccordionTrigger className="px-4">
+                        Order Details
+                      </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
                         <div className="space-y-4">
                           <div className="border rounded-md divide-y">
@@ -168,7 +192,9 @@ export default function OrdersPage() {
                               <div key={item.id} className="flex p-3">
                                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
                                   <Image
-                                    src={item.product.image || "/placeholder.svg"}
+                                    src={
+                                      item.product.image || "/placeholder.svg"
+                                    }
                                     alt={item.product.name}
                                     width={64}
                                     height={64}
@@ -178,7 +204,9 @@ export default function OrdersPage() {
                                 <div className="ml-4 flex flex-1 flex-col">
                                   <div className="flex justify-between">
                                     <div>
-                                      <h3 className="text-sm font-medium">{item.product.name}</h3>
+                                      <h3 className="text-sm font-medium">
+                                        {item.product.name}
+                                      </h3>
                                       <p className="mt-1 text-xs text-muted-foreground">
                                         {siteConfig.currency}
                                         {item.price} x {item.quantity}
@@ -208,8 +236,8 @@ export default function OrdersPage() {
                                 {order.payment_method === "cod"
                                   ? "Cash on Delivery"
                                   : order.payment_method === "card"
-                                    ? "Credit/Debit Card"
-                                    : "UPI"}
+                                  ? "Credit/Debit Card"
+                                  : "UPI"}
                               </span>
                             </div>
                           </div>
@@ -233,6 +261,5 @@ export default function OrdersPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -37,14 +37,7 @@ export const productImages = {
   "toilet-cleaner": "/placeholder.svg?height=300&width=300&text=Toilet+Cleaner",
 };
 
-// Function to get image URL with fallback
 export function getProductImageUrl(imagePath: string): string {
-  if (imagePath.startsWith("/images/products/")) {
-    const filename = imagePath.split("/").pop()?.split(".")[0];
-    return filename && productImages[filename as keyof typeof productImages]
-      ? productImages[filename as keyof typeof productImages]
-      : "/placeholder.svg?height=300&width=300&text=Product";
-  }
   return imagePath || "/placeholder.svg?height=300&width=300&text=Product";
 }
 

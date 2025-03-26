@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,12 +16,12 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/cart-context";
 import { useSound } from "@/context/sound-context";
-import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
 import { SlidingCart } from "@/components/cart/sliding-cart";
 import {
@@ -45,7 +44,12 @@ export default function Header() {
 
   const { cartItems, setIsCartOpen } = useCart();
   const { playSound, isSoundEnabled, toggleSound } = useSound();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  // Check if user is admin based on email (adjust as needed)
+  const isAdmin =
+    user?.primaryEmailAddress?.emailAddress === "admin@quickbasket.com";
 
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -56,7 +60,6 @@ export default function Header() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -84,6 +87,7 @@ export default function Header() {
   const handleSignOut = async () => {
     await signOut();
     playSound("click");
+    router.push("/"); // Redirect to home after sign-out
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -115,7 +119,7 @@ export default function Header() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
                 <Image
-                  src="/placeholder.svg"
+                  src="/main-logo.svg"
                   alt={siteConfig.name}
                   width={40}
                   height={40}
@@ -143,6 +147,7 @@ export default function Header() {
                       handleSearch(e);
                     }
                   }}
+                  ref={searchInputRef}
                 />
                 <AnimatePresence>
                   {isSearchOpen && searchResults.length > 0 && (
@@ -264,11 +269,9 @@ export default function Header() {
                   <DropdownMenuContent align="end">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">
-                          {user.full_name || "User"}
-                        </p>
+                        <p className="font-medium">{user.fullName || "User"}</p>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
-                          {user.email}
+                          {user.primaryEmailAddress?.emailAddress}
                         </p>
                       </div>
                     </div>

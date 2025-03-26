@@ -1,58 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { ProductCard } from "@/components/product/product-card"
-import { ChevronRight } from "lucide-react"
-import { useSound } from "@/context/sound-context"
+import Link from "next/link";
+import { ProductCard } from "@/components/product/product-card";
+import { ChevronRight } from "lucide-react";
+import { useSound } from "@/context/sound-context";
 
-// Mock featured products data
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Fresh Organic Apples",
-    description: "1 kg, Premium Quality",
-    price: 99,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "fruits-vegetables",
-    inStock: true,
-    discount: 10,
-  },
-  {
-    id: 2,
-    name: "Whole Wheat Bread",
-    description: "400g, Freshly Baked",
-    price: 45,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "dairy-breakfast",
-    inStock: true,
-    discount: 0,
-  },
-  {
-    id: 3,
-    name: "Farm Fresh Eggs",
-    description: "Pack of 6",
-    price: 75,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "dairy-breakfast",
-    inStock: true,
-    discount: 5,
-  },
-  {
-    id: 4,
-    name: "Amul Butter",
-    description: "500g",
-    price: 245,
-    image: "/placeholder.svg?height=200&width=200",
-    category: "dairy-breakfast",
-    inStock: true,
-    discount: 0,
-  },
-]
+type Product = {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  sale_price: number | null;
+  image: string | null;
+  category_id: number;
+  in_stock: boolean;
+  stock_quantity: number;
+  unit: string;
+  created_at: string;
+};
 
-export function FeaturedProducts() {
-  const [products] = useState(featuredProducts)
-  const { playSound } = useSound()
+export function FeaturedProducts({ products }: { products: Product[] }) {
+  const { playSound } = useSound();
 
   return (
     <section className="mb-10">
@@ -72,6 +40,5 @@ export function FeaturedProducts() {
         ))}
       </div>
     </section>
-  )
+  );
 }
-
