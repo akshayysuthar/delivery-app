@@ -22,7 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductCard } from "@/components/product/product-card";
-import { getCategoryBySlug, getProductsByCategory } from "@/lib/mock-data";
+
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -34,20 +34,20 @@ export default function CategoryPage() {
   const [priceRange, setPriceRange] = useState("all");
   const [inStockOnly, setInStockOnly] = useState(false);
 
-  useEffect(() => {
-    if (slug) {
-      const categoryData = getCategoryBySlug(slug as string);
-      setCategory(categoryData);
+  // useEffect(() => {
+  //   if (slug) {
+  //     const categoryData = getCategoryBySlug(slug as string);
+  //     setCategory(categoryData);
 
-      if (categoryData) {
-        const categoryProducts = getProductsByCategory(categoryData.id);
-        setProducts(categoryProducts);
-        setFilteredProducts(categoryProducts);
-      }
+  //     if (categoryData) {
+  //       const categoryProducts = getProductsByCategory(categoryData.id);
+  //       setProducts(categoryProducts);
+  //       setFilteredProducts(categoryProducts);
+  //     }
 
-      setIsLoading(false);
-    }
-  }, [slug]);
+  //     setIsLoading(false);
+  //   }
+  // }, [slug]);
 
   useEffect(() => {
     if (products.length > 0) {

@@ -54,17 +54,18 @@ export function SlidingCart() {
     const item = cartItems.find((item) => item.id === productId);
     if (item) {
       addToCart({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        unit: item.unit,
-        in_stock: true,
-        stock_quantity: 100,
-        category_id: "",
-        description: "",
-        created_at: "",
-      });
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              image: item.image,
+              unit: item.unit,
+              in_stock: true,
+              stock_quantity: 100,
+              category_id: "",
+              description: "",
+              created_at: ""
+
+            });
       playSound("add");
     }
   };

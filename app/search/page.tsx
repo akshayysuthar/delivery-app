@@ -21,7 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductCard } from "@/components/product/product-card";
-import { searchProducts, mockCategories } from "@/lib/mock-data";
+// import { searchProducts, mockCategories } from "@/lib/mock-data";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -35,17 +35,17 @@ export default function SearchPage() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  useEffect(() => {
-    if (query) {
-      const searchResults = searchProducts(query);
-      setProducts(searchResults);
-      setFilteredProducts(searchResults);
-    } else {
-      setProducts([]);
-      setFilteredProducts([]);
-    }
-    setIsLoading(false);
-  }, [query]);
+  // useEffect(() => {
+  //   if (query) {
+  //     const searchResults = searchProducts(query);
+  //     setProducts(searchResults);
+  //     setFilteredProducts(searchResults);
+  //   } else {
+  //     setProducts([]);
+  //     setFilteredProducts([]);
+  //   }
+  //   setIsLoading(false);
+  // }, [query]);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -187,11 +187,11 @@ export default function SearchPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {mockCategories.map((category) => (
+                      {/* {mockCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
-                      ))}
+                      ))} */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -270,11 +270,11 @@ export default function SearchPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Categories</SelectItem>
-                        {mockCategories.map((category) => (
+                        {/* {mockCategories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
-                        ))}
+                        ))} */}
                       </SelectContent>
                     </Select>
                   </div>

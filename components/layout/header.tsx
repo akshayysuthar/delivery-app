@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { searchProducts } from "@/lib/mock-data";
+// import { searchProducts } from "@/lib/mock-data";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -70,14 +70,14 @@ export default function Header() {
     }
   }, [isSearchOpen]);
 
-  useEffect(() => {
-    if (searchQuery.trim().length >= 2) {
-      const results = searchProducts(searchQuery);
-      setSearchResults(results.slice(0, 5));
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
+  // useEffect(() => {
+  //   if (searchQuery.trim().length >= 2) {
+  //     const results = searchProducts(searchQuery);
+  //     setSearchResults(results.slice(0, 5));
+  //   } else {
+  //     setSearchResults([]);
+  //   }
+  // }, [searchQuery]);
 
   const handleCartClick = () => {
     setIsCartOpen(true);

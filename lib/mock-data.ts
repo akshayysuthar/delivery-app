@@ -1,6 +1,6 @@
 import type { Product, Category, Order, OrderItem, Address } from "./supabase";
 
-// export const mockCategories: Category[] = [
+export const mockCategories: Category[] = [];
 //   {
 //     id: "cat-001",
 //     name: "Fruits & Vegetables",
@@ -59,7 +59,7 @@ import type { Product, Category, Order, OrderItem, Address } from "./supabase";
 //   },
 // ];
 
-// export const mockProducts: Product[] = [
+export const mockProducts: Product[] = [];
 //   {
 //     id: "prod-001",
 //     name: "Fresh Organic Apples",
@@ -358,7 +358,7 @@ import type { Product, Category, Order, OrderItem, Address } from "./supabase";
 //   },
 // ];
 
-// export const mockOrderItems: OrderItem[] = [
+export const mockOrderItems: OrderItem[] = [];
 //   {
 //     id: "item-001",
 //     order_id: "ord-001",
@@ -453,53 +453,47 @@ export const mockAddresses: Address[] = [
 ];
 
 // // Function to get products by category
-// export function getProductsByCategory(categoryId: string): Product[] {
-//   return mockProducts.filter((product) => product.category_id === categoryId);
-// }
-
-// // Function to get product by ID
-// export function getProductById(productId: string): Product | undefined {
-//   return mockProducts.find((product) => product.id === productId);
-// }
-
-// // Function to get category by slug
-// export function getCategoryBySlug(slug: string): Category | undefined {
-//   return mockCategories.find((category) => category.slug === slug);
-// }
-
-// // Function to search products
-// export function searchProducts(query: string): Product[] {
-//   const lowercaseQuery = query.toLowerCase();
-//   return mockProducts.filter(
-//     (product) =>
-//       product.name.toLowerCase().includes(lowercaseQuery) ||
-//       product.description.toLowerCase().includes(lowercaseQuery)
-//   );
-// }
-
-// // Function to get featured products (products with sale_price)
-// export function getFeaturedProducts(): Product[] {
-//   return mockProducts.filter((product) => product.sale_price !== undefined);
-// }
+export function getProductsByCategory(categoryId: string) {
+  //   return mockProducts.filter((product) => product.category_id === categoryId);
+  // }
+  // // Function to get product by ID
+  // export function getProductById(productId: string): Product | undefined {
+  //   return mockProducts.find((product) => product.id === productId);
+  // }
+  // // Function to get category by slug
+  // export function getCategoryBySlug(slug: string): Category | undefined {
+  //   return mockCategories.find((category) => category.slug === slug);
+  // }
+  // // Function to search products
+  // export function searchProducts(query: string): Product[] {
+  //   const lowercaseQuery = query.toLowerCase();
+  //   return mockProducts.filter(
+  //     (product) =>
+  //       product.name.toLowerCase().includes(lowercaseQuery) ||
+  //       product.description.toLowerCase().includes(lowercaseQuery)
+  //   );
+  // }
+  // // Function to get featured products (products with sale_price)
+  // export function getFeaturedProducts(): Product[] {
+  //   return mockProducts.filter((product) => product.sale_price !== undefined);
+}
 
 // // Function to get popular products (just a subset for demo)
-// export function getPopularProducts(): Product[] {
-//   return [
-//     mockProducts.find((p) => p.id === "prod-001")!,
-//     mockProducts.find((p) => p.id === "prod-003")!,
-//     mockProducts.find((p) => p.id === "prod-006")!,
-//     mockProducts.find((p) => p.id === "prod-013")!,
-//     mockProducts.find((p) => p.id === "prod-016")!,
-//     mockProducts.find((p) => p.id === "prod-019")!,
-//   ];
-// }
-
-// // Function to get related products (products in the same category)
-// export function getRelatedProducts(productId: string, limit = 4): Product[] {
-//   const product = getProductById(productId);
-//   if (!product) return [];
-
-//   return mockProducts
-//     .filter((p) => p.category_id === product.category_id && p.id !== productId)
-//     .slice(0, limit);
-// }
+export function getPopularProducts() {
+  //   return [
+  //     mockProducts.find((p) => p.id === "prod-001")!,
+  //     mockProducts.find((p) => p.id === "prod-003")!,
+  //     mockProducts.find((p) => p.id === "prod-006")!,
+  //     mockProducts.find((p) => p.id === "prod-013")!,
+  //     mockProducts.find((p) => p.id === "prod-016")!,
+  //     mockProducts.find((p) => p.id === "prod-019")!,
+  //   ];
+  // }
+  // // Function to get related products (products in the same category)
+  // export function getRelatedProducts(productId: string, limit = 4): Product[] {
+  //   const product = getProductById(productId);
+  //   if (!product) return [];
+  //   return mockProducts
+  //     .filter((p) => p.category_id === product.category_id && p.id !== productId)
+  //     .slice(0, limit);
+}
