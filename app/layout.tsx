@@ -10,6 +10,7 @@ import { CartProvider } from "@/context/cart-context";
 import { SoundProvider } from "@/context/sound-context";
 import { AuthProvider } from "@/context/auth-context";
 import { ClerkProvider } from "@clerk/nextjs";
+// import { useEffect } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,21 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
 };
+// function registerServiceWorker() {
+//   useEffect(() => {
+//     if ("serviceWorker" in navigator) {
+//       window.addEventListener("load", () => {
+//         navigator.serviceWorker
+//           .register("/service-worker.js")
+//           .then((reg) => console.log("Service Worker registered", reg))
+//           .catch((err) =>
+//             console.error("Service Worker registration failed", err)
+//           );
+//       });
+//     }
+//   }, []);
+//   return null;
+// }
 
 export default function RootLayout({
   children,
@@ -31,6 +47,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#10b981" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={inter.className}>
         <ClerkProvider>
           <AuthProvider>
@@ -39,6 +60,7 @@ export default function RootLayout({
                 <div className="flex min-h-screen flex-col">
                   <Header />
                   <main className="flex-1 h-screen">{children}</main>
+                  {/* {registerServiceWorker()} */}
                 </div>
                 <Footer />
                 <Toaster />
@@ -49,4 +71,7 @@ export default function RootLayout({
       </body>
     </html>
   );
+}
+function useEffect(arg0: () => void, arg1: never[]) {
+  throw new Error("Function not implemented.");
 }
