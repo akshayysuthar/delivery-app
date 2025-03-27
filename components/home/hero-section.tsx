@@ -1,63 +1,56 @@
-"use client"
+// components/home/hero-section.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const slides = [
-  {
-    id: 1,
-    title: "Fresh Vegetables & Fruits",
-    description: "Get farm-fresh produce delivered to your doorstep in minutes",
-    image: "/placeholder.svg?height=500&width=1200",
-    cta: "Shop Now",
-    link: "/categories/fresh-produce",
-  },
-  {
-    id: 2,
-    title: "50% OFF on First Order",
-    description: "Use code WELCOME50 at checkout",
-    image: "/placeholder.svg?height=500&width=1200",
-    cta: "Claim Offer",
-    link: "/offers",
-  },
-  {
-    id: 3,
-    title: "Daily Essentials",
-    description: "Stock up on everyday items with our quick delivery",
-    image: "/placeholder.svg?height=500&width=1200",
-    cta: "Explore",
-    link: "/categories/daily-essentials",
-  },
-]
+type Banner = {
+  id: string;
+  title: string;
+  description: string | null;
+  image: string;
+  link: string | null;
+  cta?: string; // Optional, add if used in your banners table
+};
 
-export function HeroSection() {
-  const [currentSlide, setCurrentSlide] = useState(0)
+interface HeroSectionProps {
+  banners: Banner[];
+}
+
+export function HeroSection({ banners }: HeroSectionProps) {
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
-  }
+    setCurrentSlide((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+  };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
-  }
+    setCurrentSlide((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
+  };
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    const interval = setInterval(nextSlide, 5000);
+    return () => clearInterval(interval);
+  }, [banners.length]); // Depend on banners.length to re-run if banners change
+
+  if (banners.length === 0) {
+    return <div className="h-[300px] bg-gray-200 rounded-xl mb-8" />; // Fallback UI
+  }
 
   return (
     <div className="relative overflow-hidden rounded-xl mb-8">
       <div className="relative h-[300px] md:h-[400px] lg:h-[500px] w-full">
-        {slides.map((slide, index) => (
+        {banners.map((slide, index) => (
           <div
             key={slide.id}
             className={cn(
               "absolute inset-0 transition-opacity duration-1000",
-              index === currentSlide ? "opacity-100" : "opacity-0 pointer-events-none",
+              index === currentSlide
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none"
             )}
           >
             <Image
@@ -68,11 +61,15 @@ export function HeroSection() {
               priority={index === 0}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center p-8 md:p-12">
-              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4">{slide.title}</h1>
-              <p className="text-sm md:text-base lg:text-lg text-white/90 mb-6 max-w-md">{slide.description}</p>
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+                {slide.title}
+              </h1>
+              <p className="text-sm md:text-base lg:text-lg text-white/90 mb-6 max-w-md">
+                {slide.description}
+              </p>
               <div>
                 <Button asChild size="lg" className="font-semibold">
-                  <a href={slide.link}>{slide.cta}</a>
+                  <a href={slide.link || "#"}>{slide.cta || "Shop Now"}</a>
                 </Button>
               </div>
             </div>
@@ -101,12 +98,12 @@ export function HeroSection() {
       </Button>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-        {slides.map((_, index) => (
+        {banners.map((_, index) => (
           <button
             key={index}
             className={cn(
               "w-2 h-2 rounded-full transition-all",
-              index === currentSlide ? "bg-white w-4" : "bg-white/50",
+              index === currentSlide ? "bg-white w-4" : "bg-white/50"
             )}
             onClick={() => setCurrentSlide(index)}
           >
@@ -115,6 +112,5 @@ export function HeroSection() {
         ))}
       </div>
     </div>
-  )
+  );
 }
-

@@ -325,38 +325,38 @@ export const mockProducts: Product[] = [
   },
 ];
 
-export const mockOrders: Order[] = [
-  {
-    id: "ord-001",
-    user_id: "user-001",
-    address_id: "addr-001",
-    total_amount: 450,
-    status: "delivered",
-    payment_method: "cod",
-    payment_status: "paid",
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-  },
-  {
-    id: "ord-002",
-    user_id: "user-001",
-    address_id: "addr-001",
-    total_amount: 675,
-    status: "processing",
-    payment_method: "card",
-    payment_status: "paid",
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-  },
-  {
-    id: "ord-003",
-    user_id: "user-001",
-    address_id: "addr-002",
-    total_amount: 320,
-    status: "pending",
-    payment_method: "cod",
-    payment_status: "pending",
-    created_at: new Date().toISOString(), // Today
-  },
-];
+// export const mockOrders: Order[] = [
+//   {
+//     id: "ord-001",
+//     user_id: "user-001",
+//     address_id: "addr-001",
+//     total_amount: 450,
+//     status: "delivered",
+//     payment_method: "cod",
+//     payment_status: "paid",
+//     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+//   },
+//   {
+//     id: "ord-002",
+//     user_id: "user-001",
+//     address_id: "addr-001",
+//     total_amount: 675,
+//     status: "processing",
+//     payment_method: "card",
+//     payment_status: "paid",
+//     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+//   },
+//   {
+//     id: "ord-003",
+//     user_id: "user-001",
+//     address_id: "addr-002",
+//     total_amount: 320,
+//     status: "pending",
+//     payment_method: "cod",
+//     payment_status: "pending",
+//     created_at: new Date().toISOString(), // Today
+//   },
+// ];
 
 export const mockOrderItems: OrderItem[] = [
   {

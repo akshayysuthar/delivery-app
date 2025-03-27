@@ -1,15 +1,34 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, Tag, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Package,
+  Settings,
+  ShoppingCart,
+  Tag,
+  MapPin,
+  Clock,
+  Gift,
+  Image,
+  Star,
+  Home,
+} from "lucide-react";
 
-const navItems = [
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+const adminNavItems = [
   {
     title: "Dashboard",
     href: "/admin",
-    icon: LayoutDashboard,
+    icon: Home,
+  },
+  {
+    title: "Orders",
+    href: "/admin/orders",
+    icon: ShoppingCart,
   },
   {
     title: "Products",
@@ -22,51 +41,61 @@ const navItems = [
     icon: Tag,
   },
   {
-    title: "Orders",
-    href: "/admin/orders",
-    icon: ShoppingBag,
+    title: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
   },
   {
-    title: "Customers",
-    href: "/admin/customers",
-    icon: Users,
+    title: "Service Areas",
+    href: "/admin/service-areas",
+    icon: MapPin,
+  },
+  {
+    title: "Delivery Slots",
+    href: "/admin/delivery-slots",
+    icon: Clock,
+  },
+  {
+    title: "Offers",
+    href: "/admin/offers",
+    icon: Gift,
+  },
+  {
+    title: "Banners",
+    href: "/admin/banners",
+    icon: Image,
+  },
+  {
+    title: "Featured Products",
+    href: "/admin/featured-products",
+    icon: Star,
   },
   {
     title: "Settings",
     href: "/admin/settings",
     icon: Settings,
   },
-]
+];
 
 export function AdminNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
-    <div className="space-y-4">
-      <div className="px-3 py-2">
-        <Link href="/" className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
-          <Home className="h-4 w-4 mr-2" />
-          Back to Store
-        </Link>
-      </div>
-      <nav className="space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
+    <nav className="grid items-start gap-2">
+      {adminNavItems.map((item) => (
+        <Link key={item.href} href={item.href}>
+          <Button
+            variant={pathname === item.href ? "secondary" : "ghost"}
             className={cn(
-              "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-              pathname === item.href || pathname?.startsWith(`${item.href}/`)
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted",
+              "w-full justify-start",
+              pathname === item.href ? "bg-muted hover:bg-muted" : ""
             )}
           >
-            <item.icon className="h-4 w-4 mr-3" />
+            <item.icon className="mr-2 h-4 w-4" />
             {item.title}
-          </Link>
-        ))}
-      </nav>
-    </div>
-  )
+          </Button>
+        </Link>
+      ))}
+    </nav>
+  );
 }
-

@@ -9,6 +9,56 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      fees: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          fee_type: "fixed" | "percentage";
+          fee_value: number;
+          is_active: boolean;
+          min_order_value: number;
+          max_fee_value: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          fee_type: "fixed" | "percentage";
+          fee_value: number;
+          is_active?: boolean;
+          min_order_value?: number;
+          max_fee_value?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      banners: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          image: string;
+          link: string | null;
+          display_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          image: string;
+          link?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: number;
@@ -71,7 +121,7 @@ export interface Database {
       Row: {
         id: number;
         name: string;
-        description: string | null;
+        description: string;
         price: number;
         sale_price: number | null;
         image: string | null;
@@ -82,6 +132,7 @@ export interface Database {
         created_at: string;
         updated_at: string;
         product_code?: string; // If added
+        is_featured: boolean;
       };
       Insert: {
         id?: string;
@@ -97,6 +148,7 @@ export interface Database {
         created_at?: string;
         updated_at?: string;
         product_code?: string;
+        is_featured: boolean;
       };
       Update: {
         id?: string;
@@ -296,6 +348,9 @@ export interface Database {
         payment_status: string;
         created_at: string;
         updated_at: string;
+        platform_fee: number;
+        handling_fee: number;
+        packaging_fee: number;
       };
       Insert: {
         id?: string;
@@ -310,6 +365,9 @@ export interface Database {
         payment_status?: string;
         created_at?: string;
         updated_at?: string;
+        platform_fee?: number;
+        handling_fee?: number;
+        packaging_fee?: number;
       };
       Update: {
         id?: string;

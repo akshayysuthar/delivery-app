@@ -319,3 +319,243 @@ export async function createOrderItems(orderItems: any[]) {
   if (itemsError) throw itemsError;
   return true;
 }
+
+export async function validateCouponCode(code: string, subtotal: number) {
+  const now = new Date().toISOString();
+
+  // Fetch coupon with validation
+  const { data, error } = await supabase
+    .from("coupons")
+    .select("*")
+    .eq("code", code)
+    .eq("is_active", true)
+    .lte("valid_from", now)
+    .gte("valid_to", now)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  // Check minimum order value
+  if (data.min_order_value && subtotal < data.min_order_value) {
+    return null;
+  }
+
+  // Check if coupon has reached usage limit
+  if (data.usage_limit && data.usage_count >= data.usage_limit) {
+    return null;
+  }
+
+  return data;
+}
+
+export async function uploadProductImage(file: File, path: string) {
+  const { data, error } = await supabase.storage
+    .from("products")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+
+  // Get public URL
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("products").getPublicUrl(data.path);
+
+  return publicUrl;
+}
+
+export async function uploadBannerImage(file: File, path: string) {
+  const { data, error } = await supabase.storage
+    .from("banners")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (error) {
+    console.error("Error uploading banner:", error);
+    throw error;
+  }
+
+  // Get public URL
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("banners").getPublicUrl(data.path);
+
+  return publicUrl;
+}
+
+export async function fetchBanners() {
+  const { data, error } = await supabase
+    .from("banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order");
+
+  if (error) {
+    console.error("Error fetching banners:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchCoupons() {
+  const { data, error } = await supabase
+    .from("coupons")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching coupons:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchServiceAreas() {
+  const { data, error } = await supabase
+    .from("service_areas")
+    .select("*")
+    .order("name");
+
+  if (error) {
+    console.error("Error fetching service areas:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchDeliverySlots(serviceAreaId?: string) {
+  let query = supabase
+    .from("delivery_slots")
+    .select("*, service_areas(name)")
+    .order("start_time");
+
+  if (serviceAreaId) {
+    query = query.eq("service_area_id", serviceAreaId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching delivery slots:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchAdminDashboardStats() {
+  // Get total orders
+  const { count: totalOrders, error: ordersError } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true });
+
+  // Get total revenue
+  const { data: revenueData, error: revenueError } = await supabase
+    .from("orders")
+    .select("total_amount")
+    .eq("status", "delivered");
+
+  // Get total customers
+  const { count: totalCustomers, error: customersError } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true });
+
+  // Get total products
+  const { count: totalProducts, error: productsError } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true });
+
+  // Calculate total revenue
+  const totalRevenue =
+    revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+
+  if (ordersError || revenueError || customersError || productsError) {
+    console.error("Error fetching dashboard stats");
+  }
+
+  return {
+    totalOrders: totalOrders || 0,
+    totalRevenue,
+    totalCustomers: totalCustomers || 0,
+    totalProducts: totalProducts || 0,
+  };
+}
+
+export async function fetchRecentOrders(limit = 5) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, profiles(full_name, email)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching recent orders:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getActiveFees() {
+  const { data, error } = await supabase
+    .from("fees")
+    .select("*")
+    .eq("is_active", true);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function calculateOrderFees(cartTotal: number) {
+  const fees = await getActiveFees();
+  let platform_fee = 0;
+  let handling_fee = 0;
+  let packaging_fee = 0;
+
+  fees.forEach((fee) => {
+    if (cartTotal >= fee.min_order_value) {
+      let feeValue =
+        fee.fee_type === "fixed"
+          ? fee.fee_value
+          : (cartTotal * fee.fee_value) / 100;
+      if (fee.max_fee_value && feeValue > fee.max_fee_value) {
+        feeValue = fee.max_fee_value;
+      }
+
+      switch (fee.name.toLowerCase()) {
+        case "platform fee":
+          platform_fee = feeValue;
+          break;
+        case "handling fee":
+          handling_fee = feeValue;
+          break;
+        case "packaging fee":
+          packaging_fee = feeValue;
+          break;
+      }
+    }
+  });
+
+  return { platform_fee, handling_fee, packaging_fee };
+}
+
+export async function getActiveBanners() {
+  const { data, error } = await supabase
+    .from("banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}

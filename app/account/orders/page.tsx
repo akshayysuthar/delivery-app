@@ -87,7 +87,7 @@ export default function OrdersPage() {
       case "processing":
         return "default";
       case "delivered":
-        return "success";
+        return "default";
       case "cancelled":
         return "destructive";
       default:
@@ -98,7 +98,7 @@ export default function OrdersPage() {
   const getPaymentStatusBadgeVariant = (status: Order["payment_status"]) => {
     switch (status) {
       case "paid":
-        return "success";
+        return "default";
       case "pending":
         return "secondary";
       case "failed":

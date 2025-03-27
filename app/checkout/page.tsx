@@ -14,6 +14,7 @@ import {
   MapPin,
   AlertCircle,
   Loader2,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ import {
   fetchUserAddresses,
   createOrder,
   createOrderItems,
+  validateCouponCode,
 } from "@/lib/supabase-client";
 
 export default function CheckoutPage() {
@@ -71,6 +73,20 @@ export default function CheckoutPage() {
   const [selectedSlotId, setSelectedSlotId] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  // Fees state
+  const [fees, setFees] = useState<any[]>([]);
+  const [isLoadingFees, setIsLoadingFees] = useState(true);
+  const [applicableFees, setApplicableFees] = useState<any[]>([]);
+
+  // New state for additional charges and coupon
+  const [packagingFee, setPackagingFee] = useState(10); // Default packaging fee
+  const [taxRate, setTaxRate] = useState(0.05); // 5% tax rate
+
   const subtotal = getCartTotal();
   const deliveryFee = serviceArea
     ? subtotal > serviceArea.min_order_free_delivery
@@ -81,7 +97,20 @@ export default function CheckoutPage() {
       ? 0
       : 40
     : 0;
-  const total = subtotal + deliveryFee;
+
+  // Calculate discount from coupon
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? (subtotal * appliedCoupon.discount_value) / 100
+      : appliedCoupon.discount_value
+    : 0;
+
+  // Calculate tax
+  const taxableAmount = subtotal - couponDiscount;
+  const tax = taxableAmount * taxRate;
+
+  // Calculate total
+  const total = taxableAmount + deliveryFee + packagingFee + tax;
 
   useEffect(() => {
     if (!user) {
@@ -224,6 +253,63 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Please enter a coupon code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    playSound("click");
+
+    try {
+      const coupon = await validateCouponCode(couponCode, subtotal);
+
+      if (coupon) {
+        setAppliedCoupon(coupon);
+        toast({
+          title: "Coupon applied",
+          description: `${
+            coupon.discount_type === "percentage"
+              ? `${coupon.discount_value}% off`
+              : `${siteConfig.currency}${coupon.discount_value} off`
+          } your order`,
+        });
+        playSound("success");
+      } else {
+        setAppliedCoupon(null);
+        toast({
+          title: "Invalid coupon",
+          description: "This coupon code is invalid or has expired",
+          variant: "destructive",
+        });
+        playSound("error");
+      }
+    } catch (error) {
+      console.error("Error applying coupon:", error);
+      toast({
+        title: "Failed to apply coupon",
+        description: "An error occurred while applying the coupon",
+        variant: "destructive",
+      });
+      playSound("error");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    playSound("click");
+    toast({
+      title: "Coupon removed",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -294,8 +380,13 @@ export default function CheckoutPage() {
         address_id: selectedAddressId,
         delivery_slot_id: selectedSlotId,
         delivery_date: deliveryDate,
-        total_amount: total,
+        subtotal: subtotal,
+        coupon_code: appliedCoupon?.code || null,
+        coupon_discount: couponDiscount,
+        packaging_fee: packagingFee,
+        tax: tax,
         delivery_fee: deliveryFee,
+        total_amount: total,
         status: "pending",
         payment_method: paymentMethod,
         payment_status: paymentMethod === "cod" ? "pending" : "paid",
@@ -305,7 +396,7 @@ export default function CheckoutPage() {
       // Create order items
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
-        product_id: item.id, // This is "prod-014", should be a number
+        product_id: item.id,
         quantity: item.quantity,
         price: item.price,
       }));
@@ -642,6 +733,36 @@ export default function CheckoutPage() {
                     Credit/Debit Card
                   </Label>
                 </div>
+                <div
+                  className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50"
+                  onClick={() => setPaymentMethod("upi")}
+                >
+                  <RadioGroupItem value="upi" id="upi" />
+                  <Label
+                    htmlFor="upi"
+                    className="flex items-center cursor-pointer"
+                  >
+                    <svg
+                      className="h-4 w-4 mr-2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 0L1 6V18L12 24L23 18V6L12 0Z"
+                        fill="#3A3A3A"
+                      />
+                      <path d="M12 0L1 6V18L12 24V0Z" fill="#3A3A3A" />
+                      <path d="M12 0V24L23 18V6L12 0Z" fill="#3A3A3A" />
+                      <path
+                        d="M5.5 9.5L12 13.5L18.5 9.5"
+                        stroke="white"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                    UPI
+                  </Label>
+                </div>
               </RadioGroup>
 
               {paymentMethod === "card" && (
@@ -670,6 +791,15 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+
+              {paymentMethod === "upi" && (
+                <div className="mt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="upiId">UPI ID</Label>
+                    <Input id="upiId" placeholder="name@upi" required />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -693,6 +823,64 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
+
+            {/* Coupon Code Section */}
+            <div className="border-t pt-4 mb-4">
+              <div className="flex items-center mb-2">
+                <Tag className="h-4 w-4 mr-2 text-primary" />
+                <span className="text-sm font-medium">Apply Coupon</span>
+              </div>
+
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between bg-green-50 p-2 rounded-md">
+                  <div>
+                    <span className="text-sm font-medium text-green-700">
+                      {appliedCoupon.code}
+                    </span>
+                    <p className="text-xs text-green-600">
+                      {appliedCoupon.discount_type === "percentage"
+                        ? `${appliedCoupon.discount_value}% off`
+                        : `${siteConfig.currency}${appliedCoupon.discount_value} off`}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveCoupon}
+                    className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyCoupon}
+                    disabled={isApplyingCoupon || !couponCode.trim()}
+                    className="whitespace-nowrap"
+                  >
+                    {isApplyingCoupon ? (
+                      <>
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Applying...
+                      </>
+                    ) : (
+                      "Apply"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="border-t pt-3 space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
@@ -701,6 +889,17 @@ export default function CheckoutPage() {
                   {subtotal.toFixed(2)}
                 </span>
               </div>
+
+              {appliedCoupon && (
+                <div className="flex justify-between text-green-600">
+                  <span>Coupon Discount</span>
+                  <span>
+                    -{siteConfig.currency}
+                    {couponDiscount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery Fee</span>
                 <span>
@@ -709,6 +908,23 @@ export default function CheckoutPage() {
                     : `${siteConfig.currency}${deliveryFee.toFixed(2)}`}
                 </span>
               </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Packaging Fee</span>
+                <span>
+                  {siteConfig.currency}
+                  {packagingFee.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax (5%)</span>
+                <span>
+                  {siteConfig.currency}
+                  {tax.toFixed(2)}
+                </span>
+              </div>
+
               {serviceArea && deliveryFee > 0 && (
                 <div className="text-xs text-muted-foreground">
                   Add {siteConfig.currency}
@@ -718,6 +934,7 @@ export default function CheckoutPage() {
                   more for free delivery
                 </div>
               )}
+
               <div className="border-t pt-3 mt-3">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>

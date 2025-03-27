@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
 import { ChevronRight } from "lucide-react";
 import { useSound } from "@/context/sound-context";
+import { supabase } from "@/lib/supabase";
 
 type Product = {
   id: number;
@@ -19,8 +20,9 @@ type Product = {
   created_at: string;
 };
 
-export function FeaturedProducts({ products }: { products: Product[] }) {
+export  function FeaturedProducts({ products }: { products: Product[] }) {
   const { playSound } = useSound();
+
 
   return (
     <section className="mb-10">

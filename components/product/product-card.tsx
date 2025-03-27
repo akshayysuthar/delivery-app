@@ -17,7 +17,7 @@ interface Product {
   name: string;
   description: string; // Make non-nullable
   price: number;
-  sale_price: number | null; // Allow null as per schema
+  sale_price: number | null | undefined; // Allow null or undefined as per schema
   image: string | null; // Allow null as per schema
   category_id: number | null; // Changed from string to number, allow null as per schema
   in_stock: boolean;
@@ -34,7 +34,7 @@ interface ProductCardProps {
     description: string | null;
     price: number;
     sale_price: number | null;
-    image: string | null;
+    image: string | null; // Update this line
     category_id: number;
     in_stock: boolean;
     stock_quantity: number;
@@ -50,7 +50,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const quantity = getItemQuantity(product.id.toString());
 
   const handleAddToCart = () => {
-    addToCart({ ...product, id: product.id.toString() });
+    addToCart({
+      ...product,
+      id: product.id.toString(),
+      description: product.description ?? "",
+      sale_price: product.sale_price !== null ? product.sale_price : undefined,
+      image: product.image ?? "/placeholder.svg",
+      category_id: product.category_id.toString(), // Convert category_id to string
+    });
     playSound("add");
   };
 
@@ -100,7 +107,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="flex flex-1 flex-col p-4">
         <h3 className="mb-1 font-medium line-clamp-1">{product.name}</h3>
         <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-          {product.description}
+          {product.description || ""}
         </p>
         <div className="mt-auto">
           <div className="flex items-center justify-between">
