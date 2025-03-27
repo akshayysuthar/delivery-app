@@ -1,7 +1,7 @@
+// app/admin/products/new/page.tsx
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Loader2, Save, ArrowLeft, Upload, X } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -39,6 +38,7 @@ import {
   uploadProductImage,
 } from "@/lib/supabase-client";
 import Link from "next/link";
+import { KeyValueInput } from "@/components/KeyValueInput";
 
 const productFormSchema = z.object({
   name: z
@@ -62,6 +62,8 @@ const productFormSchema = z.object({
   unit: z.string().min(1, { message: "Unit is required" }),
   in_stock: z.boolean().default(true),
   is_featured: z.boolean().default(false),
+  highlights: z.record(z.string()).optional(),
+  information: z.record(z.string()).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -90,11 +92,12 @@ export default function NewProductPage() {
       unit: "item",
       in_stock: true,
       is_featured: false,
+      highlights: {},
+      information: {},
     },
   });
 
   useEffect(() => {
-    // Redirect if not admin
     if (user && !isAdmin) {
       router.push("/");
     } else if (user && isAdmin) {
@@ -104,7 +107,6 @@ export default function NewProductPage() {
 
   const fetchCategoriesData = async () => {
     setIsFetchingCategories(true);
-
     try {
       const categories = await fetchCategories();
       setCategories(categories);
@@ -123,7 +125,6 @@ export default function NewProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -133,7 +134,6 @@ export default function NewProductPage() {
       return;
     }
 
-    // Check file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
@@ -161,10 +161,8 @@ export default function NewProductPage() {
     try {
       let imageUrl = null;
 
-      // Upload image if selected
       if (imageFile) {
         setIsUploading(true);
-
         try {
           const fileName = `${Date.now()}-${imageFile.name.replace(
             /\s+/g,
@@ -182,15 +180,15 @@ export default function NewProductPage() {
           setIsUploading(false);
           return;
         }
-
         setIsUploading(false);
       }
 
-      // Create product
       const productData = {
         ...data,
         sale_price: data.sale_price || null,
         image: imageUrl,
+        highlights: data.highlights || {},
+        information: data.information || {},
       };
 
       const { data: product, error } = await supabase
@@ -199,16 +197,13 @@ export default function NewProductPage() {
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Product created",
         description: `${data.name} has been created successfully`,
       });
 
-      // Redirect to products page
       router.push("/admin/products");
     } catch (error) {
       console.error("Error creating product:", error);
@@ -268,7 +263,6 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="description"
@@ -286,7 +280,6 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
-
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -306,7 +299,6 @@ export default function NewProductPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="sale_price"
@@ -319,14 +311,13 @@ export default function NewProductPage() {
                               step="0.01"
                               min="0"
                               value={value === undefined ? "" : value}
-                              onChange={(e) => {
-                                const val = e.target.value;
+                              onChange={(e) =>
                                 onChange(
-                                  val === ""
+                                  e.target.value === ""
                                     ? undefined
-                                    : Number.parseFloat(val)
-                                );
-                              }}
+                                    : Number.parseFloat(e.target.value)
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -338,7 +329,6 @@ export default function NewProductPage() {
                       )}
                     />
                   </div>
-
                   <FormField
                     control={form.control}
                     name="category_id"
@@ -384,7 +374,6 @@ export default function NewProductPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="unit"
@@ -483,6 +472,36 @@ export default function NewProductPage() {
                     </div>
                   </div>
 
+                  <FormField
+                    control={form.control}
+                    name="highlights"
+                    render={({ field }) => (
+                      <FormItem>
+                        <KeyValueInput
+                          label="Highlights"
+                          value={field.value || {}}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="information"
+                    render={({ field }) => (
+                      <FormItem>
+                        <KeyValueInput
+                          label="Information"
+                          value={field.value || {}}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
@@ -506,7 +525,6 @@ export default function NewProductPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="is_featured"

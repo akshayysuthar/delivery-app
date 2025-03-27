@@ -34,16 +34,16 @@ export default function RootLayout({
       <body className={inter.className}>
         <ClerkProvider>
           <AuthProvider>
-          <SoundProvider>
-            <CartProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
+            <SoundProvider>
+              <CartProvider>
+                <div className="flex min-h-screen flex-col">
+                  <Header />
+                  <main className="flex-1 h-screen">{children}</main>
+                </div>
                 <Footer />
-              </div>
-              <Toaster />
-            </CartProvider>
-          </SoundProvider>
+                <Toaster />
+              </CartProvider>
+            </SoundProvider>
           </AuthProvider>
         </ClerkProvider>
       </body>

@@ -1,111 +1,124 @@
-"use client"
+// pages/admin/products.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Plus, Search, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Plus, Search, Edit, Trash2, MoreHorizontal } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/context/auth-context"
-import { AdminNav } from "@/components/admin/admin-nav"
-import { supabase, type Product, type Category } from "@/lib/supabase"
-import { siteConfig } from "@/config/site"
-import { useToast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/auth-context";
+import { AdminNav } from "@/components/admin/admin-nav";
+import { supabase, type Product, type Category } from "@/lib/supabase";
+import { siteConfig } from "@/config/site";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function AdminProductsPage() {
-  const { user, isAdmin } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
+  const { user, isAdmin } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // Redirect if not admin
     if (user && !isAdmin) {
-      router.push("/")
+      router.push("/");
     } else if (user && isAdmin) {
-      fetchProducts()
-      fetchCategories()
+      fetchProducts();
+      fetchCategories();
     }
-  }, [user, isAdmin, router])
+  }, [user, isAdmin, router]);
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false })
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error;
 
-      setProducts(data || [])
+      setProducts(data || []);
     } catch (error) {
-      console.error("Error fetching products:", error)
+      console.error("Error fetching products:", error);
       toast({
         title: "Failed to load products",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase.from("categories").select("*").order("name", { ascending: true })
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name", { ascending: true });
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error;
 
-      setCategories(data || [])
+      setCategories(data || []);
     } catch (error) {
-      console.error("Error fetching categories:", error)
+      console.error("Error fetching categories:", error);
     }
-  }
+  };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) {
-      return
-    }
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const { error } = await supabase.from("products").delete().eq("id", productId)
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", productId);
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error;
 
-      setProducts(products.filter((product) => product.id !== productId))
+      setProducts(products.filter((product) => product.id !== productId));
 
       toast({
         title: "Product deleted",
         description: "The product has been removed successfully",
-      })
+      });
     } catch (error) {
-      console.error("Error deleting product:", error)
+      console.error("Error deleting product:", error);
       toast({
         title: "Failed to delete product",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const getCategoryName = (categoryId: string) => {
-    const category = categories.find((cat) => cat.id === categoryId)
-    return category ? category.name : "Uncategorized"
-  }
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category ? category.name : "Uncategorized";
+  };
 
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      product.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!user || !isAdmin) {
     return (
@@ -115,7 +128,7 @@ export default function AdminProductsPage() {
           <Link href="/">Go Home</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -153,7 +166,9 @@ export default function AdminProductsPage() {
           ) : filteredProducts.length === 0 ? (
             <div className="border rounded-lg p-8 text-center">
               <p className="text-muted-foreground mb-4">
-                {searchQuery ? "No products match your search." : "No products found."}
+                {searchQuery
+                  ? "No products match your search."
+                  : "No products found."}
               </p>
               <Button asChild>
                 <Link href="/admin/products/new">
@@ -172,6 +187,8 @@ export default function AdminProductsPage() {
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
+                    <TableHead>Highlights</TableHead>
+                    <TableHead>Information</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -195,7 +212,9 @@ export default function AdminProductsPage() {
                           {product.description}
                         </div>
                       </TableCell>
-                      <TableCell>{getCategoryName(product.category_id)}</TableCell>
+                      <TableCell>
+                        {getCategoryName(product.category_id)}
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">
                           {siteConfig.currency}
@@ -211,10 +230,42 @@ export default function AdminProductsPage() {
                       <TableCell>
                         <div className="flex items-center">
                           <span
-                            className={`mr-2 h-2 w-2 rounded-full ${product.in_stock ? "bg-green-500" : "bg-red-500"}`}
+                            className={`mr-2 h-2 w-2 rounded-full ${
+                              product.in_stock ? "bg-green-500" : "bg-red-500"
+                            }`}
                           ></span>
-                          <span>{product.in_stock ? `${product.stock_quantity} ${product.unit}` : "Out of stock"}</span>
+                          <span>
+                            {product.in_stock
+                              ? `${product.stock_quantity} ${product.unit}`
+                              : "Out of stock"}
+                          </span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.highlights &&
+                        Object.keys(product.highlights).length > 0
+                          ? Object.entries(product.highlights).map(
+                              ([key, value]) => (
+                                <div
+                                  key={key}
+                                  className="text-sm"
+                                >{`${key}: ${value}`}</div>
+                              )
+                            )
+                          : "None"}
+                      </TableCell>
+                      <TableCell>
+                        {product.information &&
+                        Object.keys(product.information).length > 0
+                          ? Object.entries(product.information).map(
+                              ([key, value]) => (
+                                <div
+                                  key={key}
+                                  className="text-sm"
+                                >{`${key}: ${value}`}</div>
+                              )
+                            )
+                          : "None"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -250,6 +301,5 @@ export default function AdminProductsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

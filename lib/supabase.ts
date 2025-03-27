@@ -17,6 +17,30 @@ export type User = {
   full_name: string;
   created_at: string;
 };
+// lib/supabase.ts
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  sale_price: number | null;
+  category_id: string;
+  stock_quantity: number;
+  unit: string;
+  in_stock: boolean;
+  is_featured: boolean;
+  image: string | null;
+  created_at: string;
+  highlights: Record<string, string>; // Add this
+  information: Record<string, string>; // Add this
+}
+
+// export interface Category {
+//   id: string;
+//   name: string;
+// }
+
+// ...rest of the file (supabase client, fetchCategories, etc.)
 
 export type Address = {
   id: string;
@@ -33,19 +57,19 @@ export type Address = {
   created_at: string;
 };
 
-export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  sale_price?: number;
-  image: string;
-  category_id: string;
-  in_stock: boolean;
-  stock_quantity: number;
-  unit: string;
-  created_at: string;
-};
+// export type Product = {
+//   id: string;
+//   name: string;
+//   description: string;
+//   price: number;
+//   sale_price?: number;
+//   image: string;
+//   category_id: string;
+//   in_stock: boolean;
+//   stock_quantity: number;
+//   unit: string;
+//   created_at: string;
+// };
 
 export type Category = {
   id: string;

@@ -1,3 +1,4 @@
+// pages/admin/products/edit/[id].tsx
 "use client";
 
 import type React from "react";
@@ -39,17 +40,12 @@ import {
   uploadProductImage,
 } from "@/lib/supabase-client";
 import Link from "next/link";
+import { KeyValueInput } from "@/components/KeyValueInput";
 
 const productFormSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: "Product name must be at least 2 characters" }),
-  description: z
-    .string()
-    .min(10, { message: "Description must be at least 10 characters" }),
-  price: z.coerce
-    .number()
-    .positive({ message: "Price must be a positive number" }),
+  name: z.string().min(2, { message: "Product name must be at least 2 characters" }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
+  price: z.coerce.number().positive({ message: "Price must be a positive number" }),
   sale_price: z.coerce
     .number()
     .nonnegative({ message: "Sale price must be a non-negative number" })
@@ -62,6 +58,8 @@ const productFormSchema = z.object({
   unit: z.string().min(1, { message: "Unit is required" }),
   in_stock: z.boolean().default(true),
   is_featured: z.boolean().default(false),
+  highlights: z.record(z.string()).optional(),
+  information: z.record(z.string()).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -92,11 +90,12 @@ export default function EditProductPage() {
       unit: "item",
       in_stock: true,
       is_featured: false,
+      highlights: {},
+      information: {},
     },
   });
 
   useEffect(() => {
-    // Redirect if not admin
     if (user && !isAdmin) {
       router.push("/");
     } else if (user && isAdmin) {
@@ -106,18 +105,14 @@ export default function EditProductPage() {
 
   const fetchData = async () => {
     setIsFetchingData(true);
-
     try {
-      // Fetch product data
       const { data: product, error } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (!product) {
         toast({
@@ -129,7 +124,6 @@ export default function EditProductPage() {
         return;
       }
 
-      // Set form values
       form.reset({
         name: product.name,
         description: product.description || "",
@@ -140,12 +134,12 @@ export default function EditProductPage() {
         unit: product.unit,
         in_stock: product.in_stock,
         is_featured: product.is_featured || false,
+        highlights: product.highlights || {},
+        information: product.information || {},
       });
 
-      // Set current image
       setCurrentImage(product.image);
 
-      // Fetch categories
       const categories = await fetchCategories();
       setCategories(categories);
     } catch (error) {
@@ -164,7 +158,6 @@ export default function EditProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -174,7 +167,6 @@ export default function EditProductPage() {
       return;
     }
 
-    // Check file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
@@ -202,15 +194,10 @@ export default function EditProductPage() {
     try {
       let imageUrl = currentImage;
 
-      // Upload image if selected
       if (imageFile) {
         setIsUploading(true);
-
         try {
-          const fileName = `${Date.now()}-${imageFile.name.replace(
-            /\s+/g,
-            "-"
-          )}`;
+          const fileName = `${Date.now()}-${imageFile.name.replace(/\s+/g, "-")}`;
           imageUrl = await uploadProductImage(imageFile, fileName);
         } catch (error) {
           console.error("Error uploading image:", error);
@@ -223,15 +210,15 @@ export default function EditProductPage() {
           setIsUploading(false);
           return;
         }
-
         setIsUploading(false);
       }
 
-      // Update product
       const productData = {
         ...data,
         sale_price: data.sale_price || null,
         image: imageUrl,
+        highlights: data.highlights || {},
+        information: data.information || {},
       };
 
       const { error } = await supabase
@@ -239,16 +226,13 @@ export default function EditProductPage() {
         .update(productData)
         .eq("id", id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Product updated",
         description: `${data.name} has been updated successfully`,
       });
 
-      // Redirect to products page
       router.push("/admin/products");
     } catch (error) {
       console.error("Error updating product:", error);
@@ -316,7 +300,6 @@ export default function EditProductPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="description"
@@ -334,7 +317,6 @@ export default function EditProductPage() {
                       </FormItem>
                     )}
                   />
-
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -343,18 +325,12 @@ export default function EditProductPage() {
                         <FormItem>
                           <FormLabel>Price</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              {...field}
-                            />
+                            <Input type="number" step="0.01" min="0" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="sale_price"
@@ -367,36 +343,27 @@ export default function EditProductPage() {
                               step="0.01"
                               min="0"
                               value={value === undefined ? "" : value}
-                              onChange={(e) => {
-                                const val = e.target.value;
+                              onChange={(e) =>
                                 onChange(
-                                  val === ""
-                                    ? undefined
-                                    : Number.parseFloat(val)
-                                );
-                              }}
+                                  e.target.value === "" ? undefined : Number.parseFloat(e.target.value)
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
-                          <FormDescription>
-                            Leave empty for no sale price
-                          </FormDescription>
+                          <FormDescription>Leave empty for no sale price</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
                   <FormField
                     control={form.control}
                     name="category_id"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
@@ -431,17 +398,13 @@ export default function EditProductPage() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="unit"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select unit" />
@@ -452,9 +415,7 @@ export default function EditProductPage() {
                               <SelectItem value="kg">Kilogram (kg)</SelectItem>
                               <SelectItem value="g">Gram (g)</SelectItem>
                               <SelectItem value="l">Liter (l)</SelectItem>
-                              <SelectItem value="ml">
-                                Milliliter (ml)
-                              </SelectItem>
+                              <SelectItem value="ml">Milliliter (ml)</SelectItem>
                               <SelectItem value="dozen">Dozen</SelectItem>
                               <SelectItem value="pack">Pack</SelectItem>
                               <SelectItem value="box">Box</SelectItem>
@@ -499,9 +460,7 @@ export default function EditProductPage() {
                             height={200}
                             className="mx-auto object-contain h-[200px]"
                           />
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Current image
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">Current image</p>
                         </div>
                       ) : (
                         <div className="py-4">
@@ -525,9 +484,7 @@ export default function EditProductPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() =>
-                            document.getElementById("product-image")?.click()
-                          }
+                          onClick={() => document.getElementById("product-image")?.click()}
                           disabled={isUploading}
                         >
                           {isUploading ? (
@@ -543,6 +500,36 @@ export default function EditProductPage() {
                     </div>
                   </div>
 
+                  <FormField
+                    control={form.control}
+                    name="highlights"
+                    render={({ field }) => (
+                      <FormItem>
+                        <KeyValueInput
+                          label="Highlights"
+                          value={field.value || {}}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="information"
+                    render={({ field }) => (
+                      <FormItem>
+                        <KeyValueInput
+                          label="Information"
+                          value={field.value || {}}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
@@ -550,41 +537,26 @@ export default function EditProductPage() {
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              In Stock
-                            </FormLabel>
-                            <FormDescription>
-                              Mark this product as available for purchase
-                            </FormDescription>
+                            <FormLabel className="text-base">In Stock</FormLabel>
+                            <FormDescription>Mark this product as available for purchase</FormDescription>
                           </div>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="is_featured"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Featured Product
-                            </FormLabel>
-                            <FormDescription>
-                              Show this product in featured sections
-                            </FormDescription>
+                            <FormLabel className="text-base">Featured Product</FormLabel>
+                            <FormDescription>Show this product in featured sections</FormDescription>
                           </div>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                         </FormItem>
                       )}

@@ -26,9 +26,9 @@ export function CategoryList({ categories }: { categories: Category[] }) {
           <Link
             key={category.id}
             href={`/categories/${category.slug}`}
-            className="group flex flex-col items-center p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+            className="group flex flex-col items-center py-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
           >
-            <div className="relative h-16 w-16 mb-3">
+            <div className="relative h-32 w-24">
               <Image
                 src={category.image || "/placeholder.svg"}
                 alt={category.name}
@@ -36,9 +36,9 @@ export function CategoryList({ categories }: { categories: Category[] }) {
                 className="object-contain"
               />
             </div>
-            <span className="text-sm font-medium text-center">
+            {/* <span className="text-sm font-medium text-center">
               {category.name}
-            </span>
+            </span> */}
           </Link>
         ))}
       </div>

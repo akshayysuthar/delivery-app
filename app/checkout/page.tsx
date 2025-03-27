@@ -313,6 +313,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation checks (unchanged)
     if (cartItems.length === 0) {
       toast({
         title: "Cart is empty",
@@ -353,7 +354,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Check if the selected slot is still available
     const isSlotAvailable = await isDeliverySlotAvailable(
       selectedSlotId,
       deliveryDate
@@ -366,7 +366,7 @@ export default function CheckoutPage() {
         variant: "destructive",
       });
       playSound("error");
-      fetchDeliverySlots(); // Refresh slots
+      fetchDeliverySlots();
       return;
     }
 
@@ -404,8 +404,11 @@ export default function CheckoutPage() {
       await createOrderItems(orderItems);
 
       playSound("success");
+
+      // Pass the order ID to the order success page via query parameter
+      await router.push(`/order-success?orderId=${order.id}`);
+      setIsProcessing(false); // Reset processing state after successful navigation
       // clearCart();
-      router.push("/order-success");
     } catch (error) {
       console.error("Error placing order:", error);
       playSound("error");

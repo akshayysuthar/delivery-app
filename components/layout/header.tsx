@@ -49,7 +49,7 @@ export default function Header() {
 
   // Check if user is admin based on email (adjust as needed)
   const isAdmin =
-    user?.primaryEmailAddress?.emailAddress === "admin@quickbasket.com";
+    user?.primaryEmailAddress?.emailAddress === siteConfig.adminEmail;
 
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,

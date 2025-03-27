@@ -1,18 +1,23 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import Link from "next/link"
-import { CheckCircle, ShoppingBag } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useSound } from "@/context/sound-context"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CheckCircle, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useSound } from "@/context/sound-context";
 
 export default function OrderSuccessPage() {
-  const { playSound } = useSound()
-  const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`
+  const { playSound } = useSound();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId") || "N/A";
 
+  console.log(orderId);
+
+  // Play success sound when the component mounts
   useEffect(() => {
-    playSound("success")
-  }, [playSound])
+    playSound("success");
+  }, [playSound]);
 
   return (
     <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
@@ -24,12 +29,14 @@ export default function OrderSuccessPage() {
         </div>
         <h1 className="text-2xl font-bold mb-2">Order Placed Successfully!</h1>
         <p className="text-muted-foreground mb-6">
-          Thank you for your order. Your order number is <strong>{orderNumber}</strong>.
+          Thank you for your order. Your order ID is{" "}
+          <strong>{orderId || "Loading..."}</strong>.
         </p>
         <div className="bg-muted p-4 rounded-lg mb-6">
           <h2 className="font-semibold mb-2">Delivery Information</h2>
           <p className="text-sm text-muted-foreground">
-            Your order will be delivered within 10-15 minutes. You will receive an SMS with tracking details.
+            Your order will be delivered within 10-15 minutes. You will receive
+            an SMS with tracking details.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -45,6 +52,5 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

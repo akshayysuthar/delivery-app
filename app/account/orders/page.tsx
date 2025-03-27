@@ -193,9 +193,9 @@ export default function OrdersPage() {
                                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
                                   <Image
                                     src={
-                                      item.product.image || "/placeholder.svg"
+                                      item.product?.image || "/placeholder.svg"
                                     }
-                                    alt={item.product.name}
+                                    alt={item.product?.name}
                                     width={64}
                                     height={64}
                                     className="h-full w-full object-cover"
