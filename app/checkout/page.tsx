@@ -404,7 +404,7 @@ export default function CheckoutPage() {
       await createOrderItems(orderItems);
 
       playSound("success");
-      clearCart();
+      // clearCart();
       router.push("/order-success");
     } catch (error) {
       console.error("Error placing order:", error);
