@@ -20,7 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useSound } from "@/context/sound-context";
+import { Suspense } from "react";
 
+// Schema remains unchanged
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z
@@ -28,13 +30,23 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
+// Client component for handling redirect
+function RedirectHandler({
+  setRedirectTo,
+}: {
+  setRedirectTo: (value: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
+  setRedirectTo(redirectTo); // Pass it up to the parent
+  return null; // No UI needed
+}
+
 export default function SignInPage() {
   const { signIn, setActive } = useSignIn();
   const { playSound } = useSound();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
-
+  const [redirectTo, setRedirectTo] = useState("/"); // Default redirect
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -92,6 +104,9 @@ export default function SignInPage() {
 
   return (
     <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4">
+      <Suspense fallback={<></>}>
+        <RedirectHandler setRedirectTo={setRedirectTo} />
+      </Suspense>
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Sign In</h1>
