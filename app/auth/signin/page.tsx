@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -22,7 +22,6 @@ import { Separator } from "@/components/ui/separator";
 import { useSound } from "@/context/sound-context";
 import { Suspense } from "react";
 
-// Schema remains unchanged
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z
@@ -30,16 +29,19 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-// Client component for handling redirect
 function RedirectHandler({
   setRedirectTo,
 }: {
   setRedirectTo: (value: string) => void;
 }) {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
-  setRedirectTo(redirectTo); // Pass it up to the parent
-  return null; // No UI needed
+
+  useEffect(() => {
+    const redirectTo = searchParams.get("redirect") || "/";
+    setRedirectTo(redirectTo);
+  }, [searchParams, setRedirectTo]);
+
+  return null;
 }
 
 export default function SignInPage() {

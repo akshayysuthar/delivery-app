@@ -17,7 +17,7 @@ export const createServerSupabaseClient = () =>
 
 export async function getCategories() {
   const { data, error } = await supabase.from("categories").select("*");
-  console.log(data);
+  // console.log(data);
   if (error) {
     console.error("Error fetching categories:", error);
     throw error;
