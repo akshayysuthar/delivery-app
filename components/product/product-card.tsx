@@ -1,173 +1,125 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/cart-context";
 import { useSound } from "@/context/sound-context";
 import { siteConfig } from "@/config/site";
-import { cn } from "@/lib/utils";
-import { getProductImageUrl } from "@/lib/image-placeholders";
-
-interface Product {
-  id: number; // Changed from string to number to match Supabase BIGSERIAL
-  name: string;
-  description: string; // Make non-nullable
-  price: number;
-  sale_price: number | null | undefined; // Allow null or undefined as per schema
-  image: string | null; // Allow null as per schema
-  category_id: number | null; // Changed from string to number, allow null as per schema
-  in_stock: boolean;
-  stock_quantity: number;
-  unit: string;
-  created_at: string;
-  product_code?: string; // Optional, if you added this column
-}
 
 interface ProductCardProps {
-  product: {
-    id: number;
-    name: string;
-    description: string | null;
-    price: number;
-    sale_price: number | null;
-    image: string | null; // Update this line
-    category_id: number;
-    in_stock: boolean;
-    stock_quantity: number;
-    unit: string;
-    created_at: string;
-  };
+  product: any;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, removeFromCart, getItemQuantity } = useCart();
-  const { playSound } = useSound();
   const [isHovered, setIsHovered] = useState(false);
-  const quantity = getItemQuantity(product.id.toString());
+  const { addToCart } = useCart();
+  const { playSound } = useSound();
 
-  const handleAddToCart = () => {
-    addToCart({
-      ...product,
-      id: product.id.toString(),
-      description: product.description ?? "",
-      sale_price: product.sale_price !== null ? product.sale_price : undefined,
-      image: product.image ?? "/placeholder.svg",
-      category_id: product.category_id.toString(), // Convert category_id to string
-    });
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
     playSound("add");
   };
 
-  const handleRemoveFromCart = () => {
-    removeFromCart(product.id.toString());
-    playSound("remove");
-  };
-
-  const discountedPrice = product.sale_price || product.price;
-  const discount = product.sale_price
+  const discountPercentage = product.sale_price
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
 
+  // Format the weight/unit display
+  const formatWeightUnit = () => {
+    if (!product.unit) return "";
+
+    if (product.unit === "item" || product.unit === "piece") {
+      return product.stock_quantity > 1
+        ? `${product.stock_quantity} units`
+        : "1 unit";
+    }
+
+    if (["kg", "g", "l", "ml"].includes(product.unit)) {
+      return `${product.stock_quantity} ${product.unit}`;
+    }
+
+    return `${product.stock_quantity} ${product.unit}`;
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -5 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="group relative flex flex-col overflow-hidden rounded-lg border bg-background transition-all hover:shadow-md"
-    >
-      {discount > 0 && (
-        <div className="absolute left-0 top-0 z-10 bg-red-500 px-2 py-1 text-xs font-medium text-white">
-          {discount}% OFF
-        </div>
-      )}
-      <Link
-        href={`/products/${product.id}`}
-        className="aspect-square overflow-hidden"
+    <Link href={`/products/${product.id}`}>
+      <motion.div
+        className="group relative h-full rounded-lg border bg-background p-2 transition-colors hover:bg-muted/50"
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.2 }}
       >
-        <motion.div
-          animate={{ scale: isHovered ? 1.05 : 1 }}
-          transition={{ duration: 0.3 }}
-          className="h-full w-full"
-        >
+        <div className="relative aspect-square overflow-hidden rounded-md">
           <Image
             src={product.image || "/placeholder.svg"}
             alt={product.name}
-            width={200}
-            height={200}
-            className="h-full w-full object-cover"
+            fill
+            className="object-cover transition-transform group-hover:scale-105"
           />
-        </motion.div>
-      </Link>
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-1 font-medium line-clamp-1">{product.name}</h3>
-        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-          {product.description || ""}
-        </p>
-        <div className="mt-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="font-semibold">
-                {siteConfig.currency}
-                {discountedPrice}
-              </span>
-              {discount > 0 && (
-                <span className="text-xs text-muted-foreground line-through">
+          {discountPercentage > 0 && (
+            <Badge className="absolute left-2 top-2 bg-red-500 hover:bg-red-600">
+              {discountPercentage}% OFF
+            </Badge>
+          )}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute right-2 top-2 h-8 w-8 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="sr-only">Add to wishlist</span>
+          </Button>
+        </div>
+        <div className="pt-3">
+          <h3 className="font-medium line-clamp-1">{product.name}</h3>
+          <p className="text-sm text-muted-foreground line-clamp-1">
+            {product.description}
+          </p>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {formatWeightUnit()}
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <div>
+              {product.sale_price ? (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">
+                    {siteConfig.currency}
+                    {product.sale_price}
+                  </span>
+                  <span className="text-sm text-muted-foreground line-through">
+                    {siteConfig.currency}
+                    {product.price}
+                  </span>
+                </div>
+              ) : (
+                <span className="font-medium">
                   {siteConfig.currency}
                   {product.price}
                 </span>
               )}
             </div>
-            {quantity === 0 ? (
-              <motion.div whileTap={{ scale: 0.95 }}>
-                <Button
-                  size="sm"
-                  onClick={handleAddToCart}
-                  disabled={!product.in_stock}
-                  className={cn(
-                    "h-8 rounded-full",
-                    !product.in_stock && "cursor-not-allowed opacity-50"
-                  )}
-                >
-                  <ShoppingCart className="mr-1 h-3.5 w-3.5" />
-                  Add
-                </Button>
-              </motion.div>
-            ) : (
-              <div className="flex items-center border rounded-full">
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full p-0"
-                    onClick={handleRemoveFromCart}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                    <span className="sr-only">Remove item</span>
-                  </Button>
-                </motion.div>
-                <span className="w-8 text-center text-sm">{quantity}</span>
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full p-0"
-                    onClick={handleAddToCart}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span className="sr-only">Add item</span>
-                  </Button>
-                </motion.div>
-              </div>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              <span className="sr-only">Add to cart</span>
+            </Button>
           </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }

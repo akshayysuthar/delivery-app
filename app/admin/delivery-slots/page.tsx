@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -53,47 +52,40 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase-client";
 
-const serviceAreaSchema = z.object({
+const deliverySlotSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  pincode: z
-    .string()
-    .min(5, { message: "Pincode must be at least 5 characters" }),
-  city: z.string().min(2, { message: "City must be at least 2 characters" }),
-  state: z.string().min(2, { message: "State must be at least 2 characters" }),
-  delivery_fee: z.coerce
+  start_time: z.string().min(5, { message: "Start time is required" }),
+  end_time: z.string().min(5, { message: "End time is required" }),
+  max_orders: z.coerce
     .number()
-    .min(0, { message: "Delivery fee must be a positive number" }),
-  min_order_value: z.coerce
-    .number()
-    .min(0, { message: "Minimum order value must be a positive number" }),
+    .int()
+    .positive({ message: "Max orders must be a positive number" }),
   is_active: z.boolean().default(true),
-  notes: z.string().optional(),
+  cutoff_time: z.string().min(5, { message: "Cutoff time is required" }),
 });
 
-type ServiceAreaFormValues = z.infer<typeof serviceAreaSchema>;
+type DeliverySlotFormValues = z.infer<typeof deliverySlotSchema>;
 
-export default function ServiceAreasPage() {
+export default function DeliverySlotsPage() {
   const { user, isAdmin } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const [serviceAreas, setServiceAreas] = useState<any[]>([]);
+  const [deliverySlots, setDeliverySlots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingArea, setEditingArea] = useState<any | null>(null);
+  const [editingSlot, setEditingSlot] = useState<any | null>(null);
 
-  const form = useForm<ServiceAreaFormValues>({
-    resolver: zodResolver(serviceAreaSchema),
+  const form = useForm<DeliverySlotFormValues>({
+    resolver: zodResolver(deliverySlotSchema),
     defaultValues: {
       name: "",
-      pincode: "",
-      city: "",
-      state: "",
-      delivery_fee: 0,
-      min_order_value: 0,
+      start_time: "",
+      end_time: "",
+      max_orders: 20,
       is_active: true,
-      notes: "",
+      cutoff_time: "",
     },
   });
 
@@ -101,50 +93,46 @@ export default function ServiceAreasPage() {
     if (user && !isAdmin) {
       router.push("/");
     } else if (user && isAdmin) {
-      fetchServiceAreas();
+      fetchDeliverySlots();
     }
   }, [user, isAdmin, router]);
 
   useEffect(() => {
-    if (editingArea) {
+    if (editingSlot) {
       form.reset({
-        name: editingArea.name,
-        pincode: editingArea.pincode,
-        city: editingArea.city,
-        state: editingArea.state,
-        delivery_fee: editingArea.delivery_fee,
-        min_order_value: editingArea.min_order_value,
-        is_active: editingArea.is_active,
-        notes: editingArea.notes || "",
+        name: editingSlot.name,
+        start_time: editingSlot.start_time,
+        end_time: editingSlot.end_time,
+        max_orders: editingSlot.max_orders,
+        is_active: editingSlot.is_active,
+        cutoff_time: editingSlot.cutoff_time || "",
       });
     } else {
       form.reset({
         name: "",
-        pincode: "",
-        city: "",
-        state: "",
-        delivery_fee: 0,
-        min_order_value: 0,
+        start_time: "",
+        end_time: "",
+        max_orders: 20,
         is_active: true,
-        notes: "",
+        cutoff_time: "",
       });
     }
-  }, [editingArea, form]);
+  }, [editingSlot, form]);
 
-  const fetchServiceAreas = async () => {
+  const fetchDeliverySlots = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("service_areas")
+        .from("delivery_slots")
         .select("*")
-        .order("name");
+        .order("start_time");
 
       if (error) throw error;
-      setServiceAreas(data || []);
+      setDeliverySlots(data || []);
     } catch (error) {
-      console.error("Error fetching service areas:", error);
+      console.error("Error fetching delivery slots:", error);
       toast({
-        title: "Failed to load service areas",
+        title: "Failed to load delivery slots",
         variant: "destructive",
       });
     } finally {
@@ -152,41 +140,41 @@ export default function ServiceAreasPage() {
     }
   };
 
-  const onSubmit = async (data: ServiceAreaFormValues) => {
+  const onSubmit = async (data: DeliverySlotFormValues) => {
     setIsSubmitting(true);
     try {
-      if (editingArea) {
-        // Update existing service area
+      if (editingSlot) {
+        // Update existing delivery slot
         const { error } = await supabase
-          .from("service_areas")
+          .from("delivery_slots")
           .update(data)
-          .eq("id", editingArea.id);
+          .eq("id", editingSlot.id);
 
         if (error) throw error;
 
         toast({
-          title: "Service area updated",
+          title: "Delivery slot updated",
           description: `${data.name} has been updated successfully`,
         });
       } else {
-        // Create new service area
-        const { error } = await supabase.from("service_areas").insert([data]);
+        // Create new delivery slot
+        const { error } = await supabase.from("delivery_slots").insert([data]);
 
         if (error) throw error;
 
         toast({
-          title: "Service area created",
+          title: "Delivery slot created",
           description: `${data.name} has been created successfully`,
         });
       }
 
       setIsDialogOpen(false);
-      fetchServiceAreas();
+      fetchDeliverySlots();
     } catch (error) {
-      console.error("Error saving service area:", error);
+      console.error("Error saving delivery slot:", error);
       toast({
-        title: "Failed to save service area",
-        description: "An error occurred while saving the service area",
+        title: "Failed to save delivery slot",
+        description: "An error occurred while saving the delivery slot",
         variant: "destructive",
       });
     } finally {
@@ -197,36 +185,48 @@ export default function ServiceAreasPage() {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("service_areas")
+        .from("delivery_slots")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
 
       toast({
-        title: "Service area deleted",
-        description: "The service area has been deleted successfully",
+        title: "Delivery slot deleted",
+        description: "The delivery slot has been deleted successfully",
       });
 
-      fetchServiceAreas();
+      fetchDeliverySlots();
     } catch (error) {
-      console.error("Error deleting service area:", error);
+      console.error("Error deleting delivery slot:", error);
       toast({
-        title: "Failed to delete service area",
-        description: "An error occurred while deleting the service area",
+        title: "Failed to delete delivery slot",
+        description: "An error occurred while deleting the delivery slot",
         variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (area: any) => {
-    setEditingArea(area);
+  const handleEdit = (slot: any) => {
+    setEditingSlot(slot);
     setIsDialogOpen(true);
   };
 
   const handleAddNew = () => {
-    setEditingArea(null);
+    setEditingSlot(null);
     setIsDialogOpen(true);
+  };
+
+  const formatTime = (time: string) => {
+    if (!time) return "";
+
+    // Assuming time is in 24-hour format like "14:30"
+    const [hours, minutes] = time.split(":");
+    const hour = Number.parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+
+    return `${hour12}:${minutes} ${ampm}`;
   };
 
   if (!user || !isAdmin) {
@@ -249,7 +249,7 @@ export default function ServiceAreasPage() {
             Back to Dashboard
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Service Areas</h1>
+        <h1 className="text-2xl font-bold">Delivery Slots</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -259,23 +259,25 @@ export default function ServiceAreasPage() {
 
         <div className="md:col-span-4">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Manage Service Areas</h2>
+            <h2 className="text-xl font-semibold">Manage Delivery Slots</h2>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNew}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add New Area
+                  Add New Slot
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[550px]">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingArea ? "Edit Service Area" : "Add New Service Area"}
+                    {editingSlot
+                      ? "Edit Delivery Slot"
+                      : "Add New Delivery Slot"}
                   </DialogTitle>
                   <DialogDescription>
-                    {editingArea
-                      ? "Update the details of this service area"
-                      : "Add a new area where you provide delivery service"}
+                    {editingSlot
+                      ? "Update the details of this delivery slot"
+                      : "Add a new time slot for delivery"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -288,9 +290,12 @@ export default function ServiceAreasPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Area Name</FormLabel>
+                          <FormLabel>Slot Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Adajan" {...field} />
+                            <Input
+                              placeholder="e.g., Morning Slot"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -299,12 +304,12 @@ export default function ServiceAreasPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="pincode"
+                        name="start_time"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Pincode</FormLabel>
+                            <FormLabel>Start Time</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., 395009" {...field} />
+                              <Input type="time" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -312,45 +317,12 @@ export default function ServiceAreasPage() {
                       />
                       <FormField
                         control={form.control}
-                        name="city"
+                        name="end_time"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>City</FormLabel>
+                            <FormLabel>End Time</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., Surat" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Gujarat" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="delivery_fee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Delivery Fee (₹)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="1"
-                                {...field}
-                              />
+                              <Input type="time" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -360,57 +332,59 @@ export default function ServiceAreasPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="min_order_value"
+                        name="cutoff_time"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Minimum Order Value (₹)</FormLabel>
+                            <FormLabel>Cutoff Time</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="1"
-                                {...field}
-                              />
+                              <Input type="time" {...field} />
                             </FormControl>
+                            <FormDescription>
+                              Last time to place an order for this slot
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       <FormField
                         control={form.control}
-                        name="is_active"
+                        name="max_orders"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-md border p-3">
-                            <div className="space-y-0.5">
-                              <FormLabel>Active</FormLabel>
-                              <FormDescription>
-                                Enable delivery in this area
-                              </FormDescription>
-                            </div>
+                          <FormItem>
+                            <FormLabel>Maximum Orders</FormLabel>
                             <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
+                              <Input
+                                type="number"
+                                min="1"
+                                step="1"
+                                {...field}
                               />
                             </FormControl>
+                            <FormDescription>
+                              Maximum orders for this slot
+                            </FormDescription>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
                     <FormField
                       control={form.control}
-                      name="notes"
+                      name="is_active"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Notes (Optional)</FormLabel>
+                        <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-md border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Active</FormLabel>
+                            <FormDescription>
+                              Enable this delivery slot for booking
+                            </FormDescription>
+                          </div>
                           <FormControl>
-                            <Textarea
-                              placeholder="Any additional information about this area"
-                              className="resize-none"
-                              {...field}
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -419,10 +393,10 @@ export default function ServiceAreasPage() {
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {editingArea ? "Updating..." : "Creating..."}
+                            {editingSlot ? "Updating..." : "Creating..."}
                           </>
                         ) : (
-                          <>{editingArea ? "Update Area" : "Add Area"}</>
+                          <>{editingSlot ? "Update Slot" : "Add Slot"}</>
                         )}
                       </Button>
                     </DialogFooter>
@@ -436,18 +410,17 @@ export default function ServiceAreasPage() {
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : serviceAreas.length === 0 ? (
+          ) : deliverySlots.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/30">
               <h3 className="text-lg font-medium mb-2">
-                No service areas found
+                No delivery slots found
               </h3>
               <p className="text-muted-foreground mb-4">
-                Add your first service area to start delivering in that
-                location.
+                Add your first delivery slot to start accepting orders.
               </p>
               <Button onClick={handleAddNew}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Service Area
+                Add Delivery Slot
               </Button>
             </div>
           ) : (
@@ -455,39 +428,40 @@ export default function ServiceAreasPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Area Name</TableHead>
-                    <TableHead>Pincode</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Delivery Fee</TableHead>
-                    <TableHead>Min. Order</TableHead>
+                    <TableHead>Slot Name</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Cutoff Time</TableHead>
+                    <TableHead>Max Orders</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {serviceAreas.map((area) => (
-                    <TableRow key={area.id}>
-                      <TableCell className="font-medium">{area.name}</TableCell>
-                      <TableCell>{area.pincode}</TableCell>
-                      <TableCell>{area.city}</TableCell>
-                      <TableCell>₹{area.delivery_fee}</TableCell>
-                      <TableCell>₹{area.min_order_value}</TableCell>
+                  {deliverySlots.map((slot) => (
+                    <TableRow key={slot.id}>
+                      <TableCell className="font-medium">{slot.name}</TableCell>
+                      <TableCell>
+                        {formatTime(slot.start_time)} -{" "}
+                        {formatTime(slot.end_time)}
+                      </TableCell>
+                      <TableCell>{formatTime(slot.cutoff_time)}</TableCell>
+                      <TableCell>{slot.max_orders}</TableCell>
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            area.is_active
+                            slot.is_active
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {area.is_active ? "Active" : "Inactive"}
+                          {slot.is_active ? "Active" : "Inactive"}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(area)}
+                          onClick={() => handleEdit(slot)}
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
@@ -502,17 +476,17 @@ export default function ServiceAreasPage() {
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
-                                Delete Service Area
+                                Delete Delivery Slot
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete {area.name}?
+                                Are you sure you want to delete {slot.name}?
                                 This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDelete(area.id)}
+                                onClick={() => handleDelete(slot.id)}
                                 className="bg-red-500 hover:bg-red-600"
                               >
                                 Delete

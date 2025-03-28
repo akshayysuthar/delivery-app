@@ -10,6 +10,7 @@ import { CartProvider } from "@/context/cart-context";
 import { SoundProvider } from "@/context/sound-context";
 import { AuthProvider } from "@/context/auth-context";
 import { ClerkProvider } from "@clerk/nextjs";
+import MobileNavbar from "@/components/layout/mobile-navbar";
 // import { useEffect } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -63,6 +64,7 @@ export default function RootLayout({
                   {/* {registerServiceWorker()} */}
                 </div>
                 <Footer />
+                <MobileNavbar />
                 <Toaster />
               </CartProvider>
             </SoundProvider>

@@ -1,4 +1,3 @@
-// app/admin/products/new/page.tsx
 "use client";
 
 import type React from "react";
@@ -477,11 +476,14 @@ export default function NewProductPage() {
                     name="highlights"
                     render={({ field }) => (
                       <FormItem>
-                        <KeyValueInput
-                          label="Highlights"
-                          value={field.value || {}}
-                          onChange={field.onChange}
-                        />
+                        <FormLabel>Highlights</FormLabel>
+                        <FormControl>
+                          <KeyValueInput
+                            label=""
+                            value={field.value || {}}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -492,11 +494,14 @@ export default function NewProductPage() {
                     name="information"
                     render={({ field }) => (
                       <FormItem>
-                        <KeyValueInput
-                          label="Information"
-                          value={field.value || {}}
-                          onChange={field.onChange}
-                        />
+                        <FormLabel>Information</FormLabel>
+                        <FormControl>
+                          <KeyValueInput
+                            label=""
+                            value={field.value || {}}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

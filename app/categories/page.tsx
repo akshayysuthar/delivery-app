@@ -31,10 +31,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductCard } from "@/components/product/product-card";
+
 import {
   getCategoryBySlug,
   getProductsByCategory,
-} from "@/lib/supabase-client";
+} from "@/lib/supabase-client"; // Adjust path
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -53,14 +54,18 @@ export default function CategoryPage() {
         setCategory(categoryData);
 
         if (categoryData) {
-          const categoryProducts = await getProductsByCategory(categoryData.id);
-          setProducts(categoryProducts);
-          setFilteredProducts(categoryProducts);
+          const { data: categoryProducts, error } = await getProductsByCategory(
+            categoryData.id as number
+          );
+          if (!error && categoryProducts) {
+            setProducts(categoryProducts);
+            setFilteredProducts(categoryProducts);
+          }
         }
-
         setIsLoading(false);
       }
     }
+
     fetchData();
   }, [slug]);
 

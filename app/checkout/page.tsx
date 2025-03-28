@@ -50,6 +50,7 @@ import {
   createOrderItems,
   validateCouponCode,
 } from "@/lib/supabase-client";
+import type { Offer } from "@/lib/supabase.types";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -74,6 +75,7 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
 
   // Coupon state
+  const [coupon, setCoupon] = useState<Offer | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -85,7 +87,7 @@ export default function CheckoutPage() {
 
   // New state for additional charges and coupon
   const [packagingFee, setPackagingFee] = useState(10); // Default packaging fee
-  const [taxRate, setTaxRate] = useState(0.05); // 5% tax rate
+  const [taxRate, setTaxRate] = useState(0); // 5% tax rate
 
   const subtotal = getCartTotal();
   const deliveryFee = serviceArea
@@ -268,7 +270,7 @@ export default function CheckoutPage() {
     try {
       const coupon = await validateCouponCode(couponCode, subtotal);
 
-      if (coupon) {
+      if (coupon !== null && coupon !== undefined) {
         setAppliedCoupon(coupon);
         toast({
           title: "Coupon applied",
@@ -395,7 +397,7 @@ export default function CheckoutPage() {
 
       // Create order items
       const orderItems = cartItems.map((item) => ({
-        order_id: order.id,
+        order_id: order.data?.id,
         product_id: item.id,
         quantity: item.quantity,
         price: item.price,

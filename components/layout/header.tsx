@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,18 +11,17 @@ import {
   ShoppingCart,
   User,
   Search,
-  Menu,
-  X,
+  Home,
   LogOut,
-  Volume2,
+  Volume1,
   VolumeX,
 } from "lucide-react";
-import { useUser, useClerk } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/cart-context";
 import { useSound } from "@/context/sound-context";
+import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
 import { SlidingCart } from "@/components/cart/sliding-cart";
 import {
@@ -31,25 +31,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// import { searchProducts } from "@/lib/mock-data";
+import {
+  searchProducts,
+  fetchUserAddresses,
+  fetchUserOrders,
+} from "@/lib/supabase-client";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
+  const [slotTime, setSlotTime] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const { cartItems, setIsCartOpen } = useCart();
   const { playSound, isSoundEnabled, toggleSound } = useSound();
-  const { user } = useUser();
-  const { signOut } = useClerk();
-
-  // Check if user is admin based on email (adjust as needed)
-  const isAdmin =
-    user?.primaryEmailAddress?.emailAddress === siteConfig.adminEmail;
+  const { user, signOut, isAdmin } = useAuth();
 
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -57,27 +57,58 @@ export default function Header() {
   );
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+    const fetchUserData = async () => {
+      if (user?.id) {
+        const addresses = await fetchUserAddresses(user.id);
+        if (addresses.length > 0) {
+          const defaultAddr = addresses[0];
+          setDefaultAddress(`${defaultAddr.address_line1}`);
+        }
+
+        const orders = await fetchUserOrders(user.id);
+        if (orders.length > 0) {
+          const latestOrder = orders[0];
+          const slot = latestOrder.delivery_slots;
+          if (slot) {
+            const start = slot.start_time.slice(0, 5);
+            const end = slot.end_time.slice(0, 5);
+            setSlotTime(`${start} - ${end}`);
+          } else {
+            setSlotTime("No slot booked");
+          }
+        } else {
+          setSlotTime("No slot booked");
+        }
+      }
     };
+    fetchUserData();
+  }, [user]);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    if (isSearchOpen && searchInputRef.current) searchInputRef.current.focus();
   }, [isSearchOpen]);
 
-  // useEffect(() => {
-  //   if (searchQuery.trim().length >= 2) {
-  //     const results = searchProducts(searchQuery);
-  //     setSearchResults(results.slice(0, 5));
-  //   } else {
-  //     setSearchResults([]);
-  //   }
-  // }, [searchQuery]);
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      const handleSearch = async () => {
+        const results = await searchProducts(searchQuery);
+        if (!Array.isArray(results)) {
+          console.error("Error searching products: Invalid response format");
+          return;
+        }
+        setSearchResults(results.slice(0, 5));
+      };
+      handleSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
 
   const handleCartClick = () => {
     setIsCartOpen(true);
@@ -87,7 +118,6 @@ export default function Header() {
   const handleSignOut = async () => {
     await signOut();
     playSound("click");
-    router.push("/"); // Redirect to home after sign-out
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -110,7 +140,7 @@ export default function Header() {
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 w-full transition-all duration-200",
+          "sticky top-0 z-40 w-full transition-all duration-200 hidden md:block",
           isScrolled ? "bg-white shadow-md" : "bg-white/80 backdrop-blur-sm"
         )}
       >
@@ -119,7 +149,7 @@ export default function Header() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
                 <Image
-                  src="/main-logo.svg"
+                  src="/placeholder.svg"
                   alt={siteConfig.name}
                   width={40}
                   height={40}
@@ -128,9 +158,18 @@ export default function Header() {
                   {siteConfig.name}
                 </span>
               </Link>
+              <div className="ml-6">
+                <span className="text-sm">
+                  Early Slot: {slotTime || "Loading..."}
+                </span>
+                <br />
+                <span className="text-sm flex items-center">
+                  <Home className="h-3 w-3 mr-1" /> {user?.full_name},{" "}
+                  {defaultAddress || "No address set"}
+                </span>
+              </div>
             </div>
-
-            <div className="hidden md:flex md:flex-1 mx-4 lg:mx-8">
+            <div className="flex-1 mx-4 lg:mx-8">
               <div className="relative w-full max-w-lg">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -141,11 +180,8 @@ export default function Header() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchOpen(true)}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setIsSearchOpen(false);
-                    } else if (e.key === "Enter") {
-                      handleSearch(e);
-                    }
+                    if (e.key === "Escape") setIsSearchOpen(false);
+                    else if (e.key === "Enter") handleSearch(e);
                   }}
                   ref={searchInputRef}
                 />
@@ -157,50 +193,47 @@ export default function Header() {
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg z-50 overflow-hidden"
                     >
-                      <div className="p-2">
-                        {searchResults.map((product) => (
-                          <div
-                            key={product.id}
-                            className="flex items-center p-2 hover:bg-muted rounded-md cursor-pointer"
-                            onClick={() => handleSearchItemClick(product.id)}
-                          >
-                            <div className="h-10 w-10 relative rounded-md overflow-hidden flex-shrink-0">
-                              <Image
-                                src={product.image || "/placeholder.svg"}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-medium">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {siteConfig.currency}
-                                {product.sale_price || product.price}
-                              </p>
-                            </div>
+                      {searchResults.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center p-2 hover:bg-muted rounded-md cursor-pointer"
+                          onClick={() => handleSearchItemClick(product.id)}
+                        >
+                          <div className="h-10 w-10 relative rounded-md overflow-hidden flex-shrink-0">
+                            <Image
+                              src={product.image || "/placeholder.svg"}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
                           </div>
-                        ))}
-                        <div className="mt-2 pt-2 border-t">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full text-primary"
-                            onClick={handleSearch}
-                          >
-                            See all results for "{searchQuery}"
-                          </Button>
+                          <div className="ml-3">
+                            <p className="text-sm font-medium">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {siteConfig.currency}
+                              {product.sale_price || product.price}
+                            </p>
+                          </div>
                         </div>
+                      ))}
+                      <div className="mt-2 pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-primary"
+                          onClick={handleSearch}
+                        >
+                          See all results for "{searchQuery}"
+                        </Button>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
-
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="flex items-center space-x-1">
               {siteConfig.navigation.map((item) => (
                 <Link
                   key={item.href}
@@ -210,7 +243,6 @@ export default function Header() {
                   {item.title}
                 </Link>
               ))}
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -219,15 +251,11 @@ export default function Header() {
                 title={isSoundEnabled ? "Mute sounds" : "Enable sounds"}
               >
                 {isSoundEnabled ? (
-                  <Volume2 className="h-5 w-5" />
+                  <Volume1 className="h-5 w-5" />
                 ) : (
                   <VolumeX className="h-5 w-5" />
                 )}
-                <span className="sr-only">
-                  {isSoundEnabled ? "Mute sounds" : "Enable sounds"}
-                </span>
               </Button>
-
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -236,7 +264,6 @@ export default function Header() {
                   Admin
                 </Link>
               )}
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -254,7 +281,6 @@ export default function Header() {
                   </motion.span>
                 )}
               </Button>
-
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -267,11 +293,13 @@ export default function Header() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">{user.fullName || "User"}</p>
+                    <div className="flex items-center gap-2 p-2">
+                      <div className="flex flex-col space-y-1">
+                        <p className="font-medium">
+                          {user.full_name || "User"}
+                        </p>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
-                          {user.primaryEmailAddress?.emailAddress}
+                          {user.email}
                         </p>
                       </div>
                     </div>
@@ -300,152 +328,9 @@ export default function Header() {
                 </Button>
               )}
             </nav>
-
-            <div className="flex md:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative mr-2"
-                onClick={handleCartClick}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
-                  >
-                    {totalItems}
-                  </motion.span>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
           </div>
         </div>
-
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t"
-            >
-              <div className="container mx-auto px-4 py-3">
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <form onSubmit={handleSearch}>
-                    <Input
-                      type="search"
-                      placeholder="Search for groceries..."
-                      className="w-full pl-10"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </form>
-                </div>
-                <nav className="flex flex-col space-y-1">
-                  {siteConfig.navigation.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.title}
-                    </Link>
-                  ))}
-
-                  <div className="flex items-center px-3 py-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={toggleSound}
-                      className="text-muted-foreground p-0 h-8 w-8"
-                    >
-                      {isSoundEnabled ? (
-                        <Volume2 className="h-4 w-4" />
-                      ) : (
-                        <VolumeX className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <span className="ml-2 text-sm">
-                      {isSoundEnabled ? "Sounds On" : "Sounds Off"}
-                    </span>
-                  </div>
-
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted text-primary"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
-
-                  {user ? (
-                    <>
-                      <Link
-                        href="/account"
-                        className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        My Account
-                      </Link>
-                      <Link
-                        href="/account/orders"
-                        className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        My Orders
-                      </Link>
-                      <Link
-                        href="/account/addresses"
-                        className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        My Addresses
-                      </Link>
-                      <button
-                        className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-muted text-red-600 w-full text-left"
-                        onClick={() => {
-                          handleSignOut();
-                          setIsMobileMenuOpen(false);
-                        }}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" /> Sign out
-                      </button>
-                    </>
-                  ) : (
-                    <Link
-                      href="/auth/signin"
-                      className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign in
-                    </Link>
-                  )}
-                </nav>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
-
-      {/* Sliding Cart */}
       <SlidingCart />
     </>
   );

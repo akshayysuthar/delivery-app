@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Upload,
   X,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,67 +63,45 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { useAuth } from "@/context/auth-context";
-import { supabase, uploadOfferImage } from "@/lib/supabase-client";
+import { supabase, uploadBannerImage } from "@/lib/supabase-client";
 
-const offerSchema = z.object({
-  code: z
-    .string()
-    .min(3, { message: "Code must be at least 3 characters" })
-    .toUpperCase(),
-  description: z
-    .string()
-    .min(10, { message: "Description must be at least 10 characters" }),
-  discount_percentage: z.coerce
-    .number()
-    .min(1, { message: "Discount must be at least 1%" })
-    .max(100, { message: "Discount cannot exceed 100%" }),
-  min_order_value: z.coerce
-    .number()
-    .min(0, { message: "Minimum order value must be a positive number" }),
-  max_discount_amount: z.coerce
-    .number()
-    .min(0, { message: "Maximum discount amount must be a positive number" }),
-  valid_from: z.string().min(1, { message: "Valid from date is required" }),
-  valid_to: z.string().min(1, { message: "Valid to date is required" }),
+const bannerSchema = z.object({
+  title: z.string().min(2, { message: "Title must be at least 2 characters" }),
+  description: z.string().optional(),
+  link: z.string().optional(),
+  cta: z.string().optional(),
   is_active: z.boolean().default(true),
-  usage_limit: z.coerce
+  display_order: z.coerce
     .number()
     .int()
-    .min(0, { message: "Usage limit must be a positive number" }),
-  is_first_order_only: z.boolean().default(false),
+    .min(0, { message: "Display order must be a positive number" }),
 });
 
-type OfferFormValues = z.infer<typeof offerSchema>;
+type BannerFormValues = z.infer<typeof bannerSchema>;
 
-export default function OffersPage() {
+export default function BannersPage() {
   const { user, isAdmin } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const [offers, setOffers] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<any | null>(null);
+  const [editingBanner, setEditingBanner] = useState<any | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const form = useForm<OfferFormValues>({
-    resolver: zodResolver(offerSchema),
+  const form = useForm<BannerFormValues>({
+    resolver: zodResolver(bannerSchema),
     defaultValues: {
-      code: "",
+      title: "",
       description: "",
-      discount_percentage: 10,
-      min_order_value: 0,
-      max_discount_amount: 0,
-      valid_from: new Date().toISOString().split("T")[0],
-      valid_to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      link: "",
+      cta: "Shop Now",
       is_active: true,
-      usage_limit: 0,
-      is_first_order_only: false,
+      display_order: 0,
     },
   });
 
@@ -130,61 +109,49 @@ export default function OffersPage() {
     if (user && !isAdmin) {
       router.push("/");
     } else if (user && isAdmin) {
-      fetchOffers();
+      fetchBanners();
     }
   }, [user, isAdmin, router]);
 
   useEffect(() => {
-    if (editingOffer) {
+    if (editingBanner) {
       form.reset({
-        code: editingOffer.code,
-        description: editingOffer.description,
-        discount_percentage: editingOffer.discount_percentage,
-        min_order_value: editingOffer.min_order_value,
-        max_discount_amount: editingOffer.max_discount_amount,
-        valid_from: new Date(editingOffer.valid_from)
-          .toISOString()
-          .split("T")[0],
-        valid_to: new Date(editingOffer.valid_to).toISOString().split("T")[0],
-        is_active: editingOffer.is_active,
-        usage_limit: editingOffer.usage_limit || 0,
-        is_first_order_only: editingOffer.is_first_order_only || false,
+        title: editingBanner.title,
+        description: editingBanner.description || "",
+        link: editingBanner.link || "",
+        cta: editingBanner.cta || "Shop Now",
+        is_active: editingBanner.is_active,
+        display_order: editingBanner.display_order || 0,
       });
-      setImagePreview(editingOffer.image || null);
+      setImagePreview(editingBanner.image || null);
     } else {
       form.reset({
-        code: "",
+        title: "",
         description: "",
-        discount_percentage: 10,
-        min_order_value: 0,
-        max_discount_amount: 0,
-        valid_from: new Date().toISOString().split("T")[0],
-        valid_to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        link: "",
+        cta: "Shop Now",
         is_active: true,
-        usage_limit: 0,
-        is_first_order_only: false,
+        display_order: banners.length,
       });
       setImagePreview(null);
     }
     setImageFile(null);
-  }, [editingOffer, form]);
+  }, [editingBanner, form, banners.length]);
 
-  const fetchOffers = async () => {
+  const fetchBanners = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("offers")
+        .from("banners")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
-      setOffers(data || []);
+      setBanners(data || []);
     } catch (error) {
-      console.error("Error fetching offers:", error);
+      console.error("Error fetching banners:", error);
       toast({
-        title: "Failed to load offers",
+        title: "Failed to load banners",
         variant: "destructive",
       });
     } finally {
@@ -220,19 +187,29 @@ export default function OffersPage() {
 
   const removeImage = () => {
     setImageFile(null);
-    if (imagePreview && !editingOffer?.image) {
+    if (imagePreview && !editingBanner?.image) {
       URL.revokeObjectURL(imagePreview);
       setImagePreview(null);
-    } else if (editingOffer) {
+    } else if (editingBanner) {
       // If we're editing and want to remove the existing image
       setImagePreview(null);
     }
   };
 
-  const onSubmit = async (data: OfferFormValues) => {
+  const onSubmit = async (data: BannerFormValues) => {
     setIsSubmitting(true);
     try {
-      let imageUrl = editingOffer?.image || null;
+      if (!imageFile && !imagePreview) {
+        toast({
+          title: "Image required",
+          description: "Please upload an image for the banner",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      let imageUrl = editingBanner?.image || null;
 
       if (imageFile) {
         setIsUploading(true);
@@ -241,12 +218,12 @@ export default function OffersPage() {
             /\s+/g,
             "-"
           )}`;
-          imageUrl = await uploadOfferImage(imageFile, fileName);
+          imageUrl = await uploadBannerImage(imageFile, fileName);
         } catch (error) {
           console.error("Error uploading image:", error);
           toast({
             title: "Image upload failed",
-            description: "Failed to upload offer image",
+            description: "Failed to upload banner image",
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -254,49 +231,54 @@ export default function OffersPage() {
           return;
         }
         setIsUploading(false);
-      } else if (imagePreview === null && editingOffer?.image) {
+      } else if (imagePreview === null && editingBanner?.image) {
         // User removed the image
-        imageUrl = null;
+        toast({
+          title: "Image required",
+          description: "Please upload an image for the banner",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
       }
 
-      const offerData = {
+      const bannerData = {
         ...data,
         image: imageUrl,
-        code: data.code.toUpperCase(),
       };
 
-      if (editingOffer) {
-        // Update existing offer
+      if (editingBanner) {
+        // Update existing banner
         const { error } = await supabase
-          .from("offers")
-          .update(offerData)
-          .eq("id", editingOffer.id);
+          .from("banners")
+          .update(bannerData)
+          .eq("id", editingBanner.id);
 
         if (error) throw error;
 
         toast({
-          title: "Offer updated",
-          description: `${data.code} has been updated successfully`,
+          title: "Banner updated",
+          description: `${data.title} has been updated successfully`,
         });
       } else {
-        // Create new offer
-        const { error } = await supabase.from("offers").insert([offerData]);
+        // Create new banner
+        const { error } = await supabase.from("banners").insert([bannerData]);
 
         if (error) throw error;
 
         toast({
-          title: "Offer created",
-          description: `${data.code} has been created successfully`,
+          title: "Banner created",
+          description: `${data.title} has been created successfully`,
         });
       }
 
       setIsDialogOpen(false);
-      fetchOffers();
+      fetchBanners();
     } catch (error) {
-      console.error("Error saving offer:", error);
+      console.error("Error saving banner:", error);
       toast({
-        title: "Failed to save offer",
-        description: "An error occurred while saving the offer",
+        title: "Failed to save banner",
+        description: "An error occurred while saving the banner",
         variant: "destructive",
       });
     } finally {
@@ -306,38 +288,34 @@ export default function OffersPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("offers").delete().eq("id", id);
+      const { error } = await supabase.from("banners").delete().eq("id", id);
 
       if (error) throw error;
 
       toast({
-        title: "Offer deleted",
-        description: "The offer has been deleted successfully",
+        title: "Banner deleted",
+        description: "The banner has been deleted successfully",
       });
 
-      fetchOffers();
+      fetchBanners();
     } catch (error) {
-      console.error("Error deleting offer:", error);
+      console.error("Error deleting banner:", error);
       toast({
-        title: "Failed to delete offer",
-        description: "An error occurred while deleting the offer",
+        title: "Failed to delete banner",
+        description: "An error occurred while deleting the banner",
         variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (offer: any) => {
-    setEditingOffer(offer);
+  const handleEdit = (banner: any) => {
+    setEditingBanner(banner);
     setIsDialogOpen(true);
   };
 
   const handleAddNew = () => {
-    setEditingOffer(null);
+    setEditingBanner(null);
     setIsDialogOpen(true);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
   };
 
   if (!user || !isAdmin) {
@@ -360,7 +338,7 @@ export default function OffersPage() {
             Back to Dashboard
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Offers & Coupons</h1>
+        <h1 className="text-2xl font-bold">Banner Management</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -370,23 +348,23 @@ export default function OffersPage() {
 
         <div className="md:col-span-4">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Manage Offers</h2>
+            <h2 className="text-xl font-semibold">Manage Banners</h2>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNew}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add New Offer
+                  Add New Banner
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[650px]">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingOffer ? "Edit Offer" : "Add New Offer"}
+                    {editingBanner ? "Edit Banner" : "Add New Banner"}
                   </DialogTitle>
                   <DialogDescription>
-                    {editingOffer
-                      ? "Update the details of this offer"
-                      : "Create a new discount offer or coupon code"}
+                    {editingBanner
+                      ? "Update the details of this banner"
+                      : "Create a new banner for the homepage slider"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -398,19 +376,16 @@ export default function OffersPage() {
                       <div className="space-y-4">
                         <FormField
                           control={form.control}
-                          name="code"
+                          name="title"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Coupon Code</FormLabel>
+                              <FormLabel>Banner Title</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="e.g., WELCOME10"
+                                  placeholder="e.g., Summer Sale"
                                   {...field}
                                 />
                               </FormControl>
-                              <FormDescription>
-                                Code that customers will enter at checkout
-                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -420,10 +395,10 @@ export default function OffersPage() {
                           name="description"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Description</FormLabel>
+                              <FormLabel>Description (Optional)</FormLabel>
                               <FormControl>
                                 <Textarea
-                                  placeholder="e.g., Get 10% off on your first order"
+                                  placeholder="e.g., Get up to 50% off on summer essentials"
                                   className="resize-none"
                                   {...field}
                                 />
@@ -435,102 +410,62 @@ export default function OffersPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
-                            name="discount_percentage"
+                            name="link"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Discount (%)</FormLabel>
+                                <FormLabel>Link URL (Optional)</FormLabel>
                                 <FormControl>
                                   <Input
-                                    type="number"
-                                    min="1"
-                                    max="100"
+                                    placeholder="e.g., /categories/summer"
                                     {...field}
                                   />
                                 </FormControl>
+                                <FormDescription>
+                                  Where to send users who click the banner
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                           <FormField
                             control={form.control}
-                            name="max_discount_amount"
+                            name="cta"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Max Discount (₹)</FormLabel>
+                                <FormLabel>CTA Text</FormLabel>
                                 <FormControl>
-                                  <Input type="number" min="0" {...field} />
+                                  <Input
+                                    placeholder="e.g., Shop Now"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormDescription>
-                                  0 for no limit
+                                  Text for the call-to-action button
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                         </div>
-                        <FormField
-                          control={form.control}
-                          name="min_order_value"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Min Order Value (₹)</FormLabel>
-                              <FormControl>
-                                <Input type="number" min="0" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Minimum cart value required to use this offer
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="valid_from"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Valid From</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="valid_to"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Valid To</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <FormField
-                          control={form.control}
-                          name="usage_limit"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Usage Limit</FormLabel>
-                              <FormControl>
-                                <Input type="number" min="0" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                0 for unlimited usage
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                         <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="display_order"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Display Order</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                  Lower numbers appear first in the slider
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                           <FormField
                             control={form.control}
                             name="is_active"
@@ -539,27 +474,7 @@ export default function OffersPage() {
                                 <div className="space-y-0.5">
                                   <FormLabel>Active</FormLabel>
                                   <FormDescription>
-                                    Enable this offer for customers
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="is_first_order_only"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-md border p-3">
-                                <div className="space-y-0.5">
-                                  <FormLabel>First Order Only</FormLabel>
-                                  <FormDescription>
-                                    Limit this offer to first-time customers
+                                    Show this banner on the homepage
                                   </FormDescription>
                                 </div>
                                 <FormControl>
@@ -573,16 +488,16 @@ export default function OffersPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <FormLabel>Offer Image (Optional)</FormLabel>
+                          <FormLabel>Banner Image</FormLabel>
                           <div className="border-2 border-dashed rounded-lg p-4 text-center">
                             {imagePreview ? (
                               <div className="relative">
                                 <Image
                                   src={imagePreview || "/placeholder.svg"}
-                                  alt="Offer preview"
-                                  width={200}
-                                  height={100}
-                                  className="mx-auto object-contain h-[100px]"
+                                  alt="Banner preview"
+                                  width={300}
+                                  height={150}
+                                  className="mx-auto object-cover h-[150px]"
                                 />
                                 <Button
                                   type="button"
@@ -600,6 +515,9 @@ export default function OffersPage() {
                                 <p className="text-xs text-muted-foreground">
                                   PNG, JPG or WEBP (max. 5MB)
                                 </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Recommended size: 1200x500 pixels
+                                </p>
                               </div>
                             )}
                             <div className="mt-2">
@@ -608,7 +526,7 @@ export default function OffersPage() {
                                 accept="image/*"
                                 onChange={handleImageChange}
                                 className="hidden"
-                                id="offer-image"
+                                id="banner-image"
                               />
                               <Button
                                 type="button"
@@ -616,7 +534,7 @@ export default function OffersPage() {
                                 size="sm"
                                 onClick={() =>
                                   document
-                                    .getElementById("offer-image")
+                                    .getElementById("banner-image")
                                     ?.click()
                                 }
                                 disabled={isUploading}
@@ -640,10 +558,10 @@ export default function OffersPage() {
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {editingOffer ? "Updating..." : "Creating..."}
+                            {editingBanner ? "Updating..." : "Creating..."}
                           </>
                         ) : (
-                          <>{editingOffer ? "Update Offer" : "Add Offer"}</>
+                          <>{editingBanner ? "Update Banner" : "Add Banner"}</>
                         )}
                       </Button>
                     </DialogFooter>
@@ -657,15 +575,15 @@ export default function OffersPage() {
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : offers.length === 0 ? (
+          ) : banners.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/30">
-              <h3 className="text-lg font-medium mb-2">No offers found</h3>
+              <h3 className="text-lg font-medium mb-2">No banners found</h3>
               <p className="text-muted-foreground mb-4">
-                Add your first offer to attract more customers.
+                Add your first banner to showcase on the homepage.
               </p>
               <Button onClick={handleAddNew}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Offer
+                Add Banner
               </Button>
             </div>
           ) : (
@@ -673,57 +591,55 @@ export default function OffersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Min Order</TableHead>
-                    <TableHead>Validity</TableHead>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Order</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {offers.map((offer) => (
-                    <TableRow key={offer.id}>
+                  {banners.map((banner) => (
+                    <TableRow key={banner.id}>
+                      <TableCell>
+                        <div className="relative h-16 w-32 rounded overflow-hidden">
+                          <Image
+                            src={banner.image || "/placeholder.svg"}
+                            alt={banner.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">
-                        {offer.code}
+                        {banner.title}
                       </TableCell>
-                      <TableCell>
-                        {offer.discount_percentage}%
-                        {offer.max_discount_amount > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {" "}
-                            (Max ₹{offer.max_discount_amount})
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {offer.min_order_value > 0
-                          ? `₹${offer.min_order_value}`
-                          : "None"}
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(offer.valid_from)} -{" "}
-                        {formatDate(offer.valid_to)}
-                      </TableCell>
+                      <TableCell>{banner.display_order}</TableCell>
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            offer.is_active
+                            banner.is_active
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {offer.is_active ? "Active" : "Inactive"}
+                          {banner.is_active ? "Active" : "Inactive"}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(offer)}
+                          onClick={() => handleEdit(banner)}
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link href={banner.link || "#"} target="_blank">
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                          </Link>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -734,16 +650,16 @@ export default function OffersPage() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Offer</AlertDialogTitle>
+                              <AlertDialogTitle>Delete Banner</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete the offer code{" "}
-                                {offer.code}? This action cannot be undone.
+                                Are you sure you want to delete this banner?
+                                This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDelete(offer.id)}
+                                onClick={() => handleDelete(banner.id)}
                                 className="bg-red-500 hover:bg-red-600"
                               >
                                 Delete

@@ -29,8 +29,8 @@ export const siteConfig = {
       { name: "Instagram", href: "https://instagram.com/quickbasket" },
     ],
   },
-  deliveryAreas: ["Adajan", "City Light", "Vesu", "Piplod", "Pal", "Athwa"],
-  deliveryTime: "10-15 minutes",
+  deliveryAreas: ["Adajan"],
+  deliveryTime: "1 -2 Hours ",
   currency: "₹",
   adminEmail: "akshaysuthar05@gmail.com",
   developer: {

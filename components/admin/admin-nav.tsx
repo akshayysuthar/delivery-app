@@ -71,6 +71,11 @@ const adminNavItems = [
     icon: Star,
   },
   {
+    title: "Fees",
+    href: "/admin/settings/fees",
+    icon: Settings,
+  },
+  {
     title: "Settings",
     href: "/admin/settings",
     icon: Settings,

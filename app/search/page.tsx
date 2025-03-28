@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"; // Add this line to import the Input component
 import {
   Select,
   SelectContent,
@@ -21,11 +22,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductCard } from "@/components/product/product-card";
-// import { searchProducts, mockCategories } from "@/lib/mock-data";
+import { searchProducts } from "@/lib/supabase-client";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
@@ -34,49 +36,60 @@ export default function SearchPage() {
   const [priceRange, setPriceRange] = useState("all");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(query);
 
-  // useEffect(() => {
-  //   if (query) {
-  //     const searchResults = searchProducts(query);
-  //     setProducts(searchResults);
-  //     setFilteredProducts(searchResults);
-  //   } else {
-  //     setProducts([]);
-  //     setFilteredProducts([]);
-  //   }
-  //   setIsLoading(false);
-  // }, [query]);
+  // Fetch products from Supabase
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      if (query) {
+        const results = await searchProducts(query);
+        if (!Array.isArray(results)) {
+          console.error("Error fetching products: Invalid response");
+          setProducts([]);
+          setFilteredProducts([]);
+        } else {
+          setProducts(results);
+          setFilteredProducts(results);
+        }
+      } else {
+        setProducts([]);
+        setFilteredProducts([]);
+      }
+      setIsLoading(false);
+    };
+    fetchProducts();
+  }, [query]);
 
+  // Focus search input on mount
+  useEffect(() => {
+    if (searchInputRef.current) searchInputRef.current.focus();
+  }, []);
+
+  // Filter and sort products
   useEffect(() => {
     if (products.length > 0) {
       let filtered = [...products];
 
-      // Filter by category
       if (selectedCategory !== "all") {
         filtered = filtered.filter(
           (product) => product.category_id === selectedCategory
         );
       }
 
-      // Filter by price range
       if (priceRange !== "all") {
         const [min, max] = priceRange.split("-").map(Number);
         filtered = filtered.filter((product) => {
           const price = product.sale_price || product.price;
-          if (max) {
-            return price >= min && price <= max;
-          } else {
-            return price >= min;
-          }
+          if (max) return price >= min && price <= max;
+          return price >= min;
         });
       }
 
-      // Filter by stock
       if (inStockOnly) {
         filtered = filtered.filter((product) => product.in_stock);
       }
 
-      // Sort products
       switch (sortOption) {
         case "price-low":
           filtered.sort(
@@ -97,7 +110,6 @@ export default function SearchPage() {
           break;
         case "featured":
         default:
-          // Keep original order or prioritize discounted items
           filtered.sort(
             (a, b) => (b.sale_price ? 1 : 0) - (a.sale_price ? 1 : 0)
           );
@@ -107,6 +119,19 @@ export default function SearchPage() {
       setFilteredProducts(filtered);
     }
   }, [products, sortOption, priceRange, inStockOnly, selectedCategory]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.history.pushState(
+        {},
+        "",
+        `/search?q=${encodeURIComponent(searchQuery.trim())}`
+      );
+      const event = new Event("popstate");
+      window.dispatchEvent(event); // Trigger re-fetch
+    }
+  };
 
   if (isLoading) {
     return (
@@ -118,6 +143,22 @@ export default function SearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <div className="relative w-full max-w-lg mx-auto">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <form onSubmit={handleSearch}>
+            <Input
+              type="search"
+              placeholder="Search for groceries, vegetables, fruits..."
+              className="w-full pl-10 rounded-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              ref={searchInputRef}
+            />
+          </form>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Search Results</h1>
@@ -126,7 +167,6 @@ export default function SearchPage() {
             {filteredProducts.length === 1 ? "result" : "results"} for "{query}"
           </p>
         </div>
-
         <div className="flex items-center gap-2">
           <div className="hidden sm:block">
             <Select value={sortOption} onValueChange={setSortOption}>
@@ -141,7 +181,6 @@ export default function SearchPage() {
               </SelectContent>
             </Select>
           </div>
-
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="sm:hidden">
@@ -175,7 +214,6 @@ export default function SearchPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <h3 className="text-sm font-medium mb-2">Category</h3>
                   <Select
@@ -187,15 +225,10 @@ export default function SearchPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {/* {mockCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))} */}
+                      {/* Add real categories here if available */}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <h3 className="text-sm font-medium mb-2">Price Range</h3>
                   <Select value={priceRange} onValueChange={setPriceRange}>
@@ -212,7 +245,6 @@ export default function SearchPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -228,7 +260,6 @@ export default function SearchPage() {
                     In Stock Only
                   </label>
                 </div>
-
                 <Button
                   className="w-full"
                   onClick={() =>
@@ -242,7 +273,6 @@ export default function SearchPage() {
               </div>
             </SheetContent>
           </Sheet>
-
           <div className="hidden sm:block">
             <Sheet>
               <SheetTrigger asChild>
@@ -270,15 +300,10 @@ export default function SearchPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Categories</SelectItem>
-                        {/* {mockCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))} */}
+                        {/* Add real categories here if available */}
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div>
                     <h3 className="text-sm font-medium mb-2">Price Range</h3>
                     <Select value={priceRange} onValueChange={setPriceRange}>
@@ -295,7 +320,6 @@ export default function SearchPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -308,7 +332,6 @@ export default function SearchPage() {
                       In Stock Only
                     </label>
                   </div>
-
                   <Button
                     className="w-full"
                     onClick={() =>
