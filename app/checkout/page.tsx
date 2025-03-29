@@ -37,7 +37,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useCart } from "@/context/cart-context";
-import { useAuth } from "@/context/auth-context";
 import { useSound } from "@/context/sound-context";
 import { siteConfig } from "@/config/site";
 import { useToast } from "@/components/ui/use-toast";
@@ -51,13 +50,16 @@ import {
   validateCouponCode,
 } from "@/lib/supabase-client";
 import type { Offer } from "@/lib/supabase.types";
+import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/context/auth-context";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, getCartTotal, clearCart } = useCart();
-  const { user, hasAddress } = useAuth();
+  const { user } = useUser();
   const { playSound } = useSound();
   const { toast } = useToast();
+  const { hasAddress } = useAuth();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");

@@ -8,9 +8,9 @@ import Footer from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/context/cart-context";
 import { SoundProvider } from "@/context/sound-context";
-import { AuthProvider } from "@/context/auth-context";
 import { ClerkProvider } from "@clerk/nextjs";
 import MobileNavbar from "@/components/layout/mobile-navbar";
+import { AuthProvider } from "@/context/auth-context";
 // import { useEffect } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -55,8 +55,8 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ClerkProvider>
-          <AuthProvider>
-            <SoundProvider>
+          <SoundProvider>
+            <AuthProvider>
               <CartProvider>
                 <div className="flex min-h-screen flex-col">
                   <Header />
@@ -67,8 +67,8 @@ export default function RootLayout({
                 <MobileNavbar />
                 <Toaster />
               </CartProvider>
-            </SoundProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </SoundProvider>
         </ClerkProvider>
       </body>
     </html>

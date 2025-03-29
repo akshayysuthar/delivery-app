@@ -28,6 +28,7 @@ import {
   fetchUserAddresses,
   fetchUserOrders,
 } from "@/lib/supabase-client";
+import { useClerk } from "@clerk/nextjs";
 
 type Banner = {
   id: string;
@@ -59,7 +60,8 @@ export function HeroSection({ banners, featuredCategories }: HeroSectionProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { signOut } = useClerk();
   const { cartItems, setIsCartOpen } = useCart();
   const { playSound } = useSound();
 

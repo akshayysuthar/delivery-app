@@ -19,6 +19,10 @@ interface CartItem {
   quantity: number;
   discount: number;
   unit: string;
+  sale_price: number;
+  information: Record<string, string>;
+  highlights: Record<string, string>;
+  is_featured: boolean;
 }
 
 interface CartContextType {
@@ -86,10 +90,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             id: product.id,
             name: product.name,
             price: discountedPrice,
-            image: getProductImageUrl(product.image),
+            image: product.image || "",
             quantity: 1,
             discount: discount,
             unit: product.unit || "item",
+            sale_price: product.sale_price || product.price,
+            information: product.information,
+            highlights: product.highlights,
+            is_featured: product.is_featured,
           },
         ];
       }

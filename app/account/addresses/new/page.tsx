@@ -20,10 +20,11 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/context/auth-context";
 import { useSound } from "@/context/sound-context";
 import { supabase, getUserLocation } from "@/lib/supabase-client";
 import { useToast } from "@/components/ui/use-toast";
+import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/context/auth-context";
 
 const addressFormSchema = z.object({
   addressType: z.enum(["home", "work", "other"]),
@@ -41,12 +42,13 @@ const addressFormSchema = z.object({
 });
 
 export default function NewAddressPage() {
-  const { user, checkHasAddress } = useAuth();
+  const user = useUser();
   const { playSound } = useSound();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isFirstAddress = searchParams.get("first") === "true";
+  const { checkHasAddress } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -124,7 +126,7 @@ export default function NewAddressPage() {
 
       const { error } = await supabase.from("addresses").insert([
         {
-          user_id: user.id,
+          user_id: user.user?.id,
           address_line1: values.addressLine1,
           address_line2: `${addressTypeLabel}: ${values.addressLine2 || ""}`,
           city: values.city,

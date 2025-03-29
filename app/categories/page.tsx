@@ -55,7 +55,7 @@ export default function CategoryPage() {
 
         if (categoryData) {
           const { data: categoryProducts, error } = await getProductsByCategory(
-            categoryData.id as number
+            categoryData.data?.id as number
           );
           if (!error && categoryProducts) {
             setProducts(categoryProducts);

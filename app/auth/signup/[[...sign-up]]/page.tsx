@@ -3,100 +3,143 @@
 import * as React from "react";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
-export default function Page() {
+export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [verifying, setVerifying] = React.useState(false);
+  const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [code, setCode] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!isLoaded && !signUp) return null;
+    if (!isLoaded || !signUp) return;
+    setLoading(true);
 
     try {
-      // Start the sign-up process using the phone number method
       await signUp.create({
-        phoneNumber: phone,
+        phoneNumber: "+91" + phone,
       });
-
-      // Start the verification - a SMS message will be sent to the
-      // number with a one-time code
       await signUp.preparePhoneNumberVerification();
-
-      // Set verifying to true to display second form and capture the OTP code
       setVerifying(true);
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error("Error:", JSON.stringify(err, null, 2));
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleVerification(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!isLoaded && !signUp) return null;
+    if (!isLoaded || !signUp) return;
+    setLoading(true);
 
     try {
-      // Use the code provided by the user and attempt verification
       const signUpAttempt = await signUp.attemptPhoneNumberVerification({
         code,
       });
-
-      // If verification was completed, set the session to active
-      // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
-
         router.push("/");
       } else {
-        // If the status is not complete, check why. User may need to
-        // complete further steps.
-        console.error(signUpAttempt);
+        console.error("Verification failed", signUpAttempt);
       }
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error("Error:", JSON.stringify(err, null, 2));
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
-  if (verifying) {
-    return (
-      <>
-        <h1>Verify your phone number</h1>
-        <form onSubmit={handleVerification}>
-          <label htmlFor="code">Enter your verification code</label>
-          <input
-            value={code}
-            id="code"
-            name="code"
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <button type="submit">Verify</button>
-        </form>
-      </>
-    );
-  }
-
   return (
-    <>
-      <h1>Sign up</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="phone">Enter phone number</label>
-        <input
-          value={phone}
-          id="phone"
-          name="phone"
-          type="tel"
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        <div id="clerk-captcha" />
-        <button type="submit">Continue</button>
-      </form>
-    </>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="bg-white shadow-xl rounded-2xl p-6 max-w-sm w-full">
+        <h1 className="text-2xl font-bold text-center">
+          {verifying ? "Verify Code" : "Welcome! Let's Get Started"}
+        </h1>
+        <p className="text-gray-500 text-center mt-2">
+          {verifying
+            ? "Enter the OTP sent to your phone"
+            : "Enter your details to sign up"}
+        </p>
+
+        <form
+          onSubmit={verifying ? handleVerification : handleSubmit}
+          className="mt-6 space-y-4"
+        >
+          {!verifying ? (
+            <>
+              <Input
+                type="text"
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <div className="flex">
+                <span className="px-3 bg-gray-200 border border-r-0 rounded-l-md text-center">
+                  +91
+                </span>
+                <Input
+                  type="tel"
+                  placeholder="9876543210"
+                  className="rounded-l-none"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+            </>
+          ) : (
+            <Input
+              type="text"
+              placeholder="123456"
+              maxLength={6}
+              className="text-center text-lg tracking-widest"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+            />
+          )}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : verifying ? (
+              "Verify"
+            ) : (
+              "Sign Up"
+            )}
+          </Button>
+
+          {verifying && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setVerifying(false);
+                setPhone("");
+              }}
+            >
+              Change Phone Number
+            </Button>
+          )}
+
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Already have an account?{" "}
+            <Link href="/sign-in" className="text-blue-600 hover:underline">
+              Sign in here
+            </Link>
+          </p>
+        </form>
+      </div>
+    </div>
   );
 }

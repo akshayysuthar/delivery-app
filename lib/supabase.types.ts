@@ -8,6 +8,7 @@ export interface ProductWithCategory extends ProductRow {
 }
 
 export interface CategoryWithProducts {
+  id: number;
   // extends Database["public"]["Tables"]["categories"]["Row"]
   products: Database["public"]["Tables"]["products"]["Row"][];
 }

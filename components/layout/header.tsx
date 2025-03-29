@@ -36,6 +36,7 @@ import {
   fetchUserAddresses,
   fetchUserOrders,
 } from "@/lib/supabase-client";
+import { useClerk } from "@clerk/nextjs";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,7 +50,9 @@ export default function Header() {
 
   const { cartItems, setIsCartOpen } = useCart();
   const { playSound, isSoundEnabled, toggleSound } = useSound();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+
+  const { signOut } = useClerk();
 
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,

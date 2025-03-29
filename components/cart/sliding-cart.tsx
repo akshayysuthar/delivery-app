@@ -63,8 +63,11 @@ export function SlidingCart() {
               stock_quantity: 100,
               category_id: "",
               description: "",
-              created_at: ""
-
+              created_at: "",
+              sale_price: item?.sale_price || item.price, // Assuming sale_price defaults to price
+              is_featured: item.is_featured || false,   // Assuming is_featured defaults to false
+              highlights: item.highlights || [],       // Assuming highlights defaults to an empty array
+              information: item.information || ""      // Assuming information defaults to an empty string
             });
       playSound("add");
     }
