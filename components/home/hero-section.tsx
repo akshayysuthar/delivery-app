@@ -150,8 +150,10 @@ export function HeroSection({ banners, featuredCategories }: HeroSectionProps) {
     );
   };
 
+  // console.log(banners);
+
   return (
-    <div className="mb-8">
+    <div className="mb-8 overflow-hidden">
       {/* Mobile Header - Only visible on mobile */}
       <div className="md:hidden">
         <div className="grid grid-cols-3 gap-2 items-center mb-3">
@@ -277,39 +279,35 @@ export function HeroSection({ banners, featuredCategories }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Featured Categories Horizontal Scroll */}
-        <div className="mt-4 mb-6">
-          <div className="overflow-x-auto whitespace-nowrap pb-2">
-            <div className="inline-flex space-x-4">
-              {featuredCategories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/categories/${category.slug}`}
-                  className="flex flex-col items-center w-20"
-                >
-                  <div className="relative h-16 w-16 rounded-full overflow-hidden mb-1 bg-muted/30">
-                    <Image
-                      src={category.image || "/placeholder.svg"}
-                      alt={category.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <span className="text-xs text-center line-clamp-1">
-                    {category.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+        {/* Banner Slider */}
+
+        <div
+          style={{
+            backgroundImage: `url(${banners[0].image})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            height: "300px",
+            position: "relative",
+            display: "flex",
+            // justifyContent: "center",
+          }}
+          className="p-4 flex"
+        >
+          <h1
+            style={{
+              color: "black",
+              textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
+            }}
+            className="text-left"
+          >
+            {banners[0].title}
+          </h1>
         </div>
+        {/* Featured Categories Horizontal Scroll */}
       </div>
 
-      {/* Banner Slider */}
-      <BannerSlider banners={banners} />
-
       {/* Cart Button - Fixed on mobile */}
-      <div className="md:hidden fixed bottom-20 right-4 z-40">
+      {/* <div className="md:hidden fixed bottom-20 right-4 z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg"
@@ -322,7 +320,7 @@ export function HeroSection({ banners, featuredCategories }: HeroSectionProps) {
             </span>
           )}
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }

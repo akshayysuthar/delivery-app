@@ -59,7 +59,7 @@ export async function getProductById(id: number) {
   return data;
 }
 export async function getProductsByCategory(categoryId: number) {
-  const { data, error } = await supabase
+  return await supabase
     .from("products")
     .select(
       `
@@ -69,7 +69,6 @@ export async function getProductsByCategory(categoryId: number) {
     )
     .eq("category_id", categoryId)
     .order("name");
-  return { data: data as ProductWithCategory[], error };
 }
 
 export async function getCategoryBySlug(slug: string) {

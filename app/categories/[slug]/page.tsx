@@ -22,7 +22,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductCard } from "@/components/product/product-card";
-
+import {
+  getCategoryBySlug,
+  getProductsByCategory,
+} from "@/lib/supabase-client";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -34,20 +37,43 @@ export default function CategoryPage() {
   const [priceRange, setPriceRange] = useState("all");
   const [inStockOnly, setInStockOnly] = useState(false);
 
-  // useEffect(() => {
-  //   if (slug) {
-  //     const categoryData = getCategoryBySlug(slug as string);
-  //     setCategory(categoryData);
+  useEffect(() => {
+    async function fetchData() {
+      if (slug) {
+        try {
+          const { data: categoryData, error: categoryError } =
+            await getCategoryBySlug(slug as string);
 
-  //     if (categoryData) {
-  //       const categoryProducts = getProductsByCategory(categoryData.id);
-  //       setProducts(categoryProducts);
-  //       setFilteredProducts(categoryProducts);
-  //     }
+          if (categoryError) {
+            console.error("Error fetching category:", categoryError);
+            return;
+          }
 
-  //     setIsLoading(false);
-  //   }
-  // }, [slug]);
+          if (categoryData) {
+            setCategory(categoryData);
+            const { data: productsData, error: productsError } =
+              await getProductsByCategory(categoryData.id);
+
+            if (productsError) {
+              console.error("Error fetching products:", productsError);
+              return;
+            }
+
+            if (productsData) {
+              setProducts(productsData);
+              setFilteredProducts(productsData);
+            }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+  }, [slug]);
 
   useEffect(() => {
     if (products.length > 0) {
